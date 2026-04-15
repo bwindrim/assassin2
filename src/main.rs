@@ -1,3 +1,10 @@
+enum Type1 {
+    BYTELOAD,
+    BYTESTORE,
+    WORDLOAD,
+    WORDSTORE
+}
+
 enum Instruction {
     ABX,
     ADCA,
