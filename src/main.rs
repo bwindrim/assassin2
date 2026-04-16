@@ -1,20 +1,20 @@
 enum Type1 {
-    BYTELOAD,
-    BYTESTORE,
-    WORDLOAD,
-    WORDSTORE
+    IMM,
+    DIR,
+    EXT,
+    IND,
 }
 
 enum Type2 {
-
-}
-
-enum Typeshift {
-
+    DIR,
+    EXT,
+    IND,
 }
 
 enum Typelea {
-
+    DIR,
+    EXT,
+    IND,
 }
 
 enum Typebr {
@@ -37,10 +37,6 @@ enum Typext {
 
 }
 
-enum Typeswi {
-
-}
-
 enum Typemisc {
 
 }
@@ -55,11 +51,12 @@ enum Instruction {
     ANDA(Type1),
     ANDB(Type1),
     ANDCC(Typecc),
-    ASLA(Typeshift),
-    ASLB(Typeshift),
-    ASRA(Typeshift),
-    ASRB(Typeshift),
-    ASR(Typeshift),
+    ASLA(Typemisc),
+    ASLB(Typemisc),
+    ASL(Type2),
+    ASRA(Typemisc),
+    ASRB(Typemisc),
+    ASR(Type2),
     BCC(Typebr),
     BCS(Typebr),
     BEQ(Typebr),
@@ -85,8 +82,8 @@ enum Instruction {
     CLF(Typesc),
     CLI(Typesc),
     CLIF(Typesc),
-    CLRA(Type2),
-    CLRB(Type2),
+    CLRA(Typemisc),
+    CLRB(Typemisc),
     CLR(Type2),
     CLV(Typesc),
     CMPA(Type1),
@@ -96,19 +93,19 @@ enum Instruction {
     CMPU(Type1),
     CMPX(Type1),
     CMPY(Type1),
-    COMA(Type2),
-    COMB(Type2),
+    COMA(Typemisc),
+    COMB(Typemisc),
     COM(Type2),
     CWAI(Typecc),
     DAA(Typemisc),
-    DECA(Type2),
-    DECB(Type2),
+    DECA(Typemisc),
+    DECB(Typemisc),
     DEC(Type2),
     EORA(Type1),
     EORB(Type1),
     EXG(Typext),
-    INCA(Type2),
-    INCB(Type2),
+    INCA(Typemisc),
+    INCB(Typemisc),
     INC(Type2),
     JMP(Type2),
     JSR(Type1),
@@ -142,15 +139,15 @@ enum Instruction {
     LEAU(Typelea),
     LEAX(Typelea),
     LEAY(Typelea),
-    LSLA(Typeshift),
-    LSLB(Typeshift),
-    LSL(Typeshift),
-    LSRA(Typeshift),
-    LSRB(Typeshift),
-    LSR(Typeshift),
+    LSLA(Typemisc),
+    LSLB(Typemisc),
+    LSL(Type2),
+    LSRA(Typemisc),
+    LSRB(Typemisc),
+    LSR(Type2),
     MUL(Typemisc),
-    NEGA(Type2),
-    NEGB(Type2),
+    NEGA(Typemisc),
+    NEGB(Typemisc),
     NEG(Type2),
     NOP(Typemisc),
     ORA(Type1),
@@ -160,12 +157,12 @@ enum Instruction {
     PSHS(Typepspl),
     PULU(Typepspl),
     PULS(Typepspl),
-    ROLA(Typeshift),
-    ROLB(Typeshift),
-    ROL(Typeshift),
-    RORA(Typeshift),
-    RORB(Typeshift),
-    ROR(Typeshift),
+    ROLA(Typemisc),
+    ROLB(Typemisc),
+    ROL(Type2),
+    RORA(Typemisc),
+    RORB(Typemisc),
+    ROR(Type2),
     RTI(Typemisc),
     RTS(Typemisc),
     SBCA(Type1),
@@ -204,13 +201,13 @@ enum Instruction {
     SUBA(Type1),
     SUBB(Type1),
     SUBD(Type1),
-    SWI(Typeswi),
-    SWI2(Typeswi),
-    SWI3(Typeswi),
+    SWI(Typemisc),
+    SWI2(Typemisc),
+    SWI3(Typemisc),
     SYNC(Typemisc),
     TFR(Typext),
-    TSTA(Type2),
-    TSTB(Type2),
+    TSTA(Typemisc),
+    TSTB(Typemisc),
     TST(Type2)
 }
 
