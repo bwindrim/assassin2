@@ -1,13 +1,28 @@
+use std::collections::HashSet;
+
 #[derive(Debug)]
-enum Register {
+enum PushPullRegister {
     A,
     B,
+    X,
+    Y,
+    US,
+    PC,
+    CC,
+    DP
+}
+
+#[derive(Debug)]
+enum TfrExgRegister {
     D,
     X,
     Y,
     U,
     S,
     PC,
+    A,
+    B,
+    CC,
     DP
 }
 
@@ -56,10 +71,19 @@ enum Typebr {
     UNRESOLVED(String)
 }
 
-// Typepspl instructions have a list of operands, which are registers to be pushed or pulled.
+// Typepspl instructions have a list (actually a set) of operands,
+// which are registers to be pushed or pulled.
 #[derive(Debug)]
-enum Typepspl {
+struct Typepspl {
+    registers: HashSet<PushPullRegister>
+}
 
+impl std::ops::Deref for Typepspl {
+    type Target = HashSet<PushPullRegister>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.registers
+    }
 }
 
 // Typecc instructions have a single operand,
@@ -73,8 +97,8 @@ struct Typecc {
 // both of which are registers.
 #[derive(Debug)]
 struct Typext {
-    src: Register,
-    dst: Register
+    reg1: TfrExgRegister,
+    reg2: TfrExgRegister
 }
 
 #[derive(Debug)]
