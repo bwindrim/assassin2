@@ -1,3 +1,4 @@
+#[derive(Debug)]
 enum Register {
     A,
     B,
@@ -10,17 +11,21 @@ enum Register {
     DP
 }
 
+#[derive(Debug)]
 struct IndexedIndirect {
 
 }
 
 // Type0 instructions have no operands.
+#[derive(Debug)]
 enum Type0 {
 }
 
-// Type1<u8> instructions have a single operand,
+// Type1 instructions have a single operand,
 // which can be an immediate value, or a direct, extended,
 // or indexed memory location.
+// The type parameter T is used to distinguish between 8-bit and 16-bit immediate values.
+#[derive(Debug)]
 enum Type1<T> {
     IMM(T),
     DIR(u8),
@@ -30,6 +35,7 @@ enum Type1<T> {
 
 // Type2 instructions have a single operand,
 // which can be a direct, extended, or indexed memory location.
+#[derive(Debug)]
 enum Type2 {
     DIR(u8),
     EXT(u16),
@@ -44,29 +50,34 @@ impl From<IndexedIndirect> for Type2 {
 
 // Typebr instructions have a single operand,
 // which is a branch target label.
+#[derive(Debug)]
 enum Typebr {
     RESOLVED(u16),
     UNRESOLVED(String)
 }
 
-// Typepspl have a list of operands, which are registers to be pushed or pulled.
+// Typepspl instructions have a list of operands, which are registers to be pushed or pulled.
+#[derive(Debug)]
 enum Typepspl {
 
 }
 
 // Typecc instructions have a single operand,
 // which is a condition code mask.
+#[derive(Debug)]
 struct Typecc {
     mask: u8
 }
 
 // Typext instructions have a pair of operands,
 // both of which are registers.
+#[derive(Debug)]
 struct Typext {
     src: Register,
     dst: Register
 }
 
+#[derive(Debug)]
 enum Instruction {
     ABX(Type0),
     ADCA(Type1<u8>),
@@ -239,4 +250,6 @@ enum Instruction {
 
 fn main() {
     println!("Hello, world!");
+    let instr = Instruction::ADDA(Type1::IMM(42));
+    println!("{:?}", instr);
 }
