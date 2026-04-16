@@ -10,39 +10,43 @@ enum Register {
     DP
 }
 
+struct IndexedIndirect {
+
+}
+
 // Type0 instructions have no operands.
 enum Type0 {
 }
 
-// Type1 instructions have a single operand,
+// Type1<u8> instructions have a single operand,
 // which can be an immediate value, or a direct, extended,
 // or indexed memory location.
-enum Type1 {
-    IMM,
-    DIR,
-    EXT,
-    IND,
+enum Type1<T> {
+    IMM(T),
+    DIR(u8),
+    EXT(u16),
+    IND(IndexedIndirect),
 }
 
 // Type2 instructions have a single operand,
 // which can be a direct, extended, or indexed memory location.
 enum Type2 {
-    DIR,
-    EXT,
-    IND,
+    DIR(u8),
+    EXT(u16),
+    IND(IndexedIndirect),
 }
 
-// Typelea instructions have a single operand,
-// which can be a direct, extended, or indexed memory location.
-enum Typelea {
-    DIR,
-    EXT,
-    IND,
+impl From<IndexedIndirect> for Type2 {
+    fn from(v: IndexedIndirect) -> Self {
+        Self::IND(v)
+    }
 }
 
 // Typebr instructions have a single operand,
 // which is a branch target label.
 enum Typebr {
+    RESOLVED(u16),
+    UNRESOLVED(String)
 }
 
 // Typepspl have a list of operands, which are registers to be pushed or pulled.
@@ -52,29 +56,26 @@ enum Typepspl {
 
 // Typecc instructions have a single operand,
 // which is a condition code mask.
-enum Typecc {
-
-}
-
-enum Typesc {
-
+struct Typecc {
+    mask: u8
 }
 
 // Typext instructions have a pair of operands,
 // both of which are registers.
-enum Typext {
-
+struct Typext {
+    src: Register,
+    dst: Register
 }
 
 enum Instruction {
     ABX(Type0),
-    ADCA(Type1),
-    ADCB(Type1),
-    ADDA(Type1),
-    ADDB(Type1),
-    ADDD(Type1),
-    ANDA(Type1),
-    ANDB(Type1),
+    ADCA(Type1<u8>),
+    ADCB(Type1<u8>),
+    ADDA(Type1<u8>),
+    ADDB(Type1<u8>),
+    ADDD(Type1<u16>),
+    ANDA(Type1<u8>),
+    ANDB(Type1<u8>),
     ANDCC(Typecc),
     ASLA(Type0),
     ASLB(Type0),
@@ -89,8 +90,8 @@ enum Instruction {
     BGT(Typebr),
     BHI(Typebr),
     BHS(Typebr),
-    BITA(Type1),
-    BITB(Type1),
+    BITA(Type1<u8>),
+    BITB(Type1<u8>),
     BLE(Typebr),
     BLO(Typebr),
     BLS(Typebr),
@@ -103,21 +104,21 @@ enum Instruction {
     BSR(Typebr),
     BVC(Typebr),
     BVS(Typebr),
-    CLC(Typesc),
-    CLF(Typesc),
-    CLI(Typesc),
-    CLIF(Typesc),
+    CLC(Type0),
+    CLF(Type0),
+    CLI(Type0),
+    CLIF(Type0),
     CLRA(Type0),
     CLRB(Type0),
     CLR(Type2),
-    CLV(Typesc),
-    CMPA(Type1),
-    CMPB(Type1),
-    CMPD(Type1),
-    CMPS(Type1),
-    CMPU(Type1),
-    CMPX(Type1),
-    CMPY(Type1),
+    CLV(Type0),
+    CMPA(Type1<u8>),
+    CMPB(Type1<u8>),
+    CMPD(Type1<u16>),
+    CMPS(Type1<u16>),
+    CMPU(Type1<u16>),
+    CMPX(Type1<u16>),
+    CMPY(Type1<u16>),
     COMA(Type0),
     COMB(Type0),
     COM(Type2),
@@ -126,14 +127,14 @@ enum Instruction {
     DECA(Type0),
     DECB(Type0),
     DEC(Type2),
-    EORA(Type1),
-    EORB(Type1),
+    EORA(Type1<u8>),
+    EORB(Type1<u8>),
     EXG(Typext),
     INCA(Type0),
     INCB(Type0),
     INC(Type2),
     JMP(Type2),
-    JSR(Type1),
+    JSR(Type1<u8>),
     LBCC(Typebr),
     LBCS(Typebr),
     LBEQ(Typebr),
@@ -153,17 +154,17 @@ enum Instruction {
     LBSR(Typebr),
     LBVC(Typebr),
     LBVS(Typebr),
-    LDA(Type1),
-    LDB(Type1),
-    LDD(Type1),
-    LDS(Type1),
-    LDU(Type1),
-    LDX(Type1),
-    LDY(Type1),
-    LEAS(Typelea),
-    LEAU(Typelea),
-    LEAX(Typelea),
-    LEAY(Typelea),
+    LDA(Type1<u8>),
+    LDB(Type1<u8>),
+    LDD(Type1<u16>),
+    LDS(Type1<u16>),
+    LDU(Type1<u16>),
+    LDX(Type1<u16>),
+    LDY(Type1<u16>),
+    LEAS(Type2),
+    LEAU(Type2),
+    LEAX(Type2),
+    LEAY(Type2),
     LSLA(Type0),
     LSLB(Type0),
     LSL(Type2),
@@ -175,8 +176,8 @@ enum Instruction {
     NEGB(Type0),
     NEG(Type2),
     NOP(Type0),
-    ORA(Type1),
-    ORB(Type1),
+    ORA(Type1<u8>),
+    ORB(Type1<u8>),
     ORCC(Typecc),
     PSHU(Typepspl),
     PSHS(Typepspl),
@@ -190,8 +191,8 @@ enum Instruction {
     ROR(Type2),
     RTI(Type0),
     RTS(Type0),
-    SBCA(Type1),
-    SBCB(Type1),
+    SBCA(Type1<u8>),
+    SBCB(Type1<u8>),
     SBCC(Typebr),
     SBCS(Typebr),
     SBEQ(Typebr),
@@ -210,22 +211,22 @@ enum Instruction {
     SSR(Typebr),
     SVC(Typebr),
     SBVS(Typebr),
-    SEC(Typesc),
-    SEF(Typesc),
-    SEI(Typesc),
-    SEIF(Typesc),
-    SEV(Typesc),
+    SEC(Type0),
+    SEF(Type0),
+    SEI(Type0),
+    SEIF(Type0),
+    SEV(Type0),
     SEX(Type0),
-    STA(Type1),
-    STB(Type1),
-    STD(Type1),
-    STS(Type1),
-    STU(Type1),
-    STX(Type1),
-    STY(Type1),
-    SUBA(Type1),
-    SUBB(Type1),
-    SUBD(Type1),
+    STA(Type2),
+    STB(Type2),
+    STD(Type2),
+    STS(Type2),
+    STU(Type2),
+    STX(Type2),
+    STY(Type2),
+    SUBA(Type1<u8>),
+    SUBB(Type1<u8>),
+    SUBD(Type1<u16>),
     SWI(Type0),
     SWI2(Type0),
     SWI3(Type0),
