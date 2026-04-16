@@ -13,17 +13,21 @@ enum PushPullRegister {
 }
 
 #[derive(Debug)]
-enum TfrExgRegister {
+enum TfrExgRegister8 {
+    A,
+    B,
+    CC,
+    DP
+}
+
+#[derive(Debug)]
+enum TfrExgRegister16 {
     D,
     X,
     Y,
     U,
     S,
-    PC,
-    A,
-    B,
-    CC,
-    DP
+    PC
 }
 
 #[derive(Debug)]
@@ -37,7 +41,7 @@ enum Type0 {
 }
 
 // Type1 instructions have a single operand,
-// which can be an immediate value, or a direct, extended,
+// which can be an immediate value or a direct, extended,
 // or indexed memory location.
 // The type parameter T is used to distinguish between 8-bit and 16-bit immediate values.
 #[derive(Debug)]
@@ -94,11 +98,22 @@ struct Typecc {
 }
 
 // Typext instructions have a pair of operands,
-// both of which are registers.
+// both of which are registers. These may be 8-bit or 16-bit registers,
+// depending on the instruction, but must be the same size.
 #[derive(Debug)]
-struct Typext {
-    reg1: TfrExgRegister,
-    reg2: TfrExgRegister
+enum Typext {
+    BYTE( TfrExgRegister8, TfrExgRegister8 ),
+    WORD( TfrExgRegister16, TfrExgRegister16 )
+}
+
+impl Typext {
+    fn from_tfr_exg_registers8(r1: TfrExgRegister8, r2: TfrExgRegister8) -> Self {
+        Self::BYTE(r1, r2)
+    }
+
+    fn from_tfr_exg_registers16(r1: TfrExgRegister16, r2: TfrExgRegister16) -> Self {
+        Self::WORD(r1, r2)
+    }
 }
 
 #[derive(Debug)]
@@ -276,4 +291,6 @@ fn main() {
     println!("Hello, world!");
     let instr = Instruction::ADDA(Type1::IMM(42));
     println!("{:?}", instr);
+    let instr2 = Instruction::EXG(Typext::from_tfr_exg_registers8(TfrExgRegister8::A, TfrExgRegister8::B));
+    println!("{:?}", instr2);
 }
