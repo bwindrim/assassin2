@@ -10,9 +10,13 @@ enum Register {
     DP
 }
 
+// Type0 instructions have no operands.
 enum Type0 {
 }
 
+// Type1 instructions have a single operand,
+// which can be an immediate value, or a direct, extended,
+// or indexed memory location.
 enum Type1 {
     IMM,
     DIR,
@@ -20,26 +24,34 @@ enum Type1 {
     IND,
 }
 
+// Type2 instructions have a single operand,
+// which can be a direct, extended, or indexed memory location.
 enum Type2 {
     DIR,
     EXT,
     IND,
 }
 
+// Typelea instructions have a single operand,
+// which can be a direct, extended, or indexed memory location.
 enum Typelea {
     DIR,
     EXT,
     IND,
 }
 
+// Typebr instructions have a single operand,
+// which is a branch target label.
 enum Typebr {
-
 }
 
+// Typepspl have a list of operands, which are registers to be pushed or pulled.
 enum Typepspl {
 
 }
 
+// Typecc instructions have a single operand,
+// which is a condition code mask.
 enum Typecc {
 
 }
@@ -48,6 +60,8 @@ enum Typesc {
 
 }
 
+// Typext instructions have a pair of operands,
+// both of which are registers.
 enum Typext {
 
 }
