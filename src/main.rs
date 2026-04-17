@@ -45,21 +45,20 @@ enum TfrExgRegister16 {
 }
 
 #[derive(Debug)]
-enum Indexed {
-    CONST(u16),
-    ACC(AccOffsetRegister),
-    REG(IndexRegister),
-    PCREL(u16)
-}
-#[derive(Debug)]
-struct Indirect {
-    indirect: bool,
-    indexed: Indexed
-}
-#[derive(Debug)]
 enum IndexedIndirect {
-    INDEXED(Indirect),
-    INDIRECT(u16)
+    CONST     { offset: u16, reg: IndexRegister },
+    CONST_IND { offset: u16, reg: IndexRegister },
+    ACC       { offset: AccOffsetRegister, reg: IndexRegister },
+    ACC_IND   { offset: AccOffsetRegister, reg: IndexRegister },
+    INC_1     { reg: IndexRegister },
+    INC_2     { reg: IndexRegister },
+    INC_2_IND { reg: IndexRegister },
+    DEC_1     { reg: IndexRegister },
+    DEC_2     { reg: IndexRegister },
+    DEC_2_IND { reg: IndexRegister },
+    PCR       { target: u16 },
+    PC        { offset: u16 }, 
+    EXT_IND(u16)
 }
 
 // Type0 instructions have no operands.
