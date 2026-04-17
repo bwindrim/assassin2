@@ -312,10 +312,40 @@ enum Instruction {
     TST(Type2)
 }
 
+#[derive(Debug)]
+enum Data {
+    DB(Vec<u8>),
+    DW(Vec<u16>),
+    DS(usize)
+}
+#[derive(Debug)]
+enum Element {
+    Inst(Instruction),
+    Data(Data)
+}
+#[derive(Debug)]
+struct Segment {
+    name: String,
+    elements: Vec<Element>
+}
 fn main() {
     println!("Hello, world!");
+    let mut seg = Segment {
+        name: "CODE".to_string(),
+        elements: vec![
+//            Element::Inst(Instruction::ABX(Type0)),
+            Element::Inst(Instruction::ADDA(Type1::IMM(42))),
+            Element::Data(Data::DB(vec![1, 2, 3])),
+            Element::Data(Data::DW(vec![0x1234, 0x5678])),
+            Element::Data(Data::DS(16))
+        ]
+    };
     let instr = Instruction::ADDA(Type1::IMM(42));
     println!("{:?}", instr);
-    let instr2 = Instruction::EXG(Typext::from_tfr_exg_registers8(TfrExgRegister8::A, TfrExgRegister8::B));
-    println!("{:?}", instr2);
+    seg.elements.push(Element::Inst(instr));
+    let instr = Instruction::EXG(Typext::from_tfr_exg_registers8(TfrExgRegister8::A, TfrExgRegister8::B));
+    println!("{:?}", instr);
+    seg.elements.push(Element::Inst(instr));
+    println!("{:?}", seg);
+
 }
