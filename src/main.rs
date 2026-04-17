@@ -21,6 +21,16 @@ enum TfrExgRegister8 {
 }
 
 #[derive(Debug)]
+enum TfrExgRegister16 {
+    D,
+    X,
+    Y,
+    U,
+    S,
+    PC
+}
+
+#[derive(Debug)]
 enum IndexRegister {
     X,
     Y,
@@ -32,16 +42,6 @@ enum IndexRegister {
 enum AccOffsetRegister {
     A,
     B
-}
-
-#[derive(Debug)]
-enum TfrExgRegister16 {
-    D,
-    X,
-    Y,
-    U,
-    S,
-    PC
 }
 
 #[derive(Debug)]
@@ -59,11 +59,6 @@ enum IndexedIndirect {
     PCR       { target: u16 },
     PC        { offset: u16 }, 
     EXT_IND(u16)
-}
-
-// Type0 instructions have no operands.
-#[derive(Debug)]
-enum Type0 {
 }
 
 // Type1 instructions have a single operand,
@@ -144,7 +139,7 @@ impl Typext {
 
 #[derive(Debug)]
 enum Instruction {
-    ABX(Type0),
+    ABX,
     ADCA(Type1<u8>),
     ADCB(Type1<u8>),
     ADDA(Type1<u8>),
@@ -153,11 +148,11 @@ enum Instruction {
     ANDA(Type1<u8>),
     ANDB(Type1<u8>),
     ANDCC(Typecc),
-    ASLA(Type0),
-    ASLB(Type0),
+    ASLA,
+    ASLB,
     ASL(Type2),
-    ASRA(Type0),
-    ASRB(Type0),
+    ASRA,
+    ASRB,
     ASR(Type2),
     BCC(Typebr),
     BCS(Typebr),
@@ -180,14 +175,14 @@ enum Instruction {
     BSR(Typebr),
     BVC(Typebr),
     BVS(Typebr),
-    CLC(Type0),
-    CLF(Type0),
-    CLI(Type0),
-    CLIF(Type0),
-    CLRA(Type0),
-    CLRB(Type0),
+    CLC,
+    CLF,
+    CLI,
+    CLIF,
+    CLRA,
+    CLRB,
     CLR(Type2),
-    CLV(Type0),
+    CLV,
     CMPA(Type1<u8>),
     CMPB(Type1<u8>),
     CMPD(Type1<u16>),
@@ -195,19 +190,19 @@ enum Instruction {
     CMPU(Type1<u16>),
     CMPX(Type1<u16>),
     CMPY(Type1<u16>),
-    COMA(Type0),
-    COMB(Type0),
+    COMA,
+    COMB,
     COM(Type2),
     CWAI(Typecc),
-    DAA(Type0),
-    DECA(Type0),
-    DECB(Type0),
+    DAA,
+    DECA,
+    DECB,
     DEC(Type2),
     EORA(Type1<u8>),
     EORB(Type1<u8>),
     EXG(Typext),
-    INCA(Type0),
-    INCB(Type0),
+    INCA,
+    INCB,
     INC(Type2),
     JMP(Type2),
     JSR(Type1<u8>),
@@ -241,17 +236,17 @@ enum Instruction {
     LEAU(Type2),
     LEAX(Type2),
     LEAY(Type2),
-    LSLA(Type0),
-    LSLB(Type0),
+    LSLA,
+    LSLB,
     LSL(Type2),
-    LSRA(Type0),
-    LSRB(Type0),
+    LSRA,
+    LSRB,
     LSR(Type2),
-    MUL(Type0),
-    NEGA(Type0),
-    NEGB(Type0),
+    MUL,
+    NEGA,
+    NEGB,
     NEG(Type2),
-    NOP(Type0),
+    NOP,
     ORA(Type1<u8>),
     ORB(Type1<u8>),
     ORCC(Typecc),
@@ -259,14 +254,14 @@ enum Instruction {
     PSHS(Typepspl),
     PULU(Typepspl),
     PULS(Typepspl),
-    ROLA(Type0),
-    ROLB(Type0),
+    ROLA,
+    ROLB,
     ROL(Type2),
-    RORA(Type0),
-    RORB(Type0),
+    RORA,
+    RORB,
     ROR(Type2),
-    RTI(Type0),
-    RTS(Type0),
+    RTI,
+    RTS,
     SBCA(Type1<u8>),
     SBCB(Type1<u8>),
     SBCC(Typebr),
@@ -286,12 +281,12 @@ enum Instruction {
     SBSR(Typebr),
     SBVC(Typebr),
     SBVS(Typebr),
-    SEC(Type0),
-    SEF(Type0),
-    SEI(Type0),
-    SEIF(Type0),
-    SEV(Type0),
-    SEX(Type0),
+    SEC,
+    SEF,
+    SEI,
+    SEIF,
+    SEV,
+    SEX,
     STA(Type2),
     STB(Type2),
     STD(Type2),
@@ -302,13 +297,13 @@ enum Instruction {
     SUBA(Type1<u8>),
     SUBB(Type1<u8>),
     SUBD(Type1<u16>),
-    SWI(Type0),
-    SWI2(Type0),
-    SWI3(Type0),
-    SYNC(Type0),
+    SWI,
+    SWI2,
+    SWI3,
+    SYNC,
     TFR(Typext),
-    TSTA(Type0),
-    TSTB(Type0),
+    TSTA,
+    TSTB,
     TST(Type2)
 }
 
@@ -333,7 +328,7 @@ fn main() {
     let mut seg = Segment {
         name: "CODE".to_string(),
         elements: vec![
-//            Element::Inst(Instruction::ABX(Type0)),
+            Element::Inst(Instruction::ABX),
             Element::Inst(Instruction::ADDA(Type1::IMM(42))),
             Element::Data(Data::DB(vec![1, 2, 3])),
             Element::Data(Data::DW(vec![0x1234, 0x5678])),
