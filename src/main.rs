@@ -21,6 +21,20 @@ enum TfrExgRegister8 {
 }
 
 #[derive(Debug)]
+enum IndexRegister {
+    X,
+    Y,
+    U,
+    S
+}
+
+#[derive(Debug)]
+enum AccOffsetRegister {
+    A,
+    B
+}
+
+#[derive(Debug)]
 enum TfrExgRegister16 {
     D,
     X,
@@ -31,8 +45,21 @@ enum TfrExgRegister16 {
 }
 
 #[derive(Debug)]
-struct IndexedIndirect {
-
+enum Indexed {
+    CONST(u16),
+    ACC(AccOffsetRegister),
+    REG(IndexRegister),
+    PCREL(u16)
+}
+#[derive(Debug)]
+struct Indirect {
+    indirect: bool,
+    indexed: Indexed
+}
+#[derive(Debug)]
+enum IndexedIndirect {
+    INDEXED(Indirect),
+    INDIRECT(u16)
 }
 
 // Type0 instructions have no operands.
