@@ -1,5 +1,25 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, vec};
 
+// Source - https://stackoverflow.com/a/72736737
+// Posted by gagiuntoli
+// Retrieved 2026-04-20, License - CC BY-SA 4.0
+
+trait IntoBytes: Sized {
+    fn to_be_bytes(a: Self) -> Vec<u8>;
+}
+
+impl IntoBytes for u8 {
+    fn to_be_bytes(a: Self) -> Vec<u8> {
+        a.to_be_bytes().to_vec()
+    }
+}
+
+impl IntoBytes for u16 {
+    fn to_be_bytes(a: Self) -> Vec<u8> {
+        a.to_be_bytes().to_vec()
+    }
+}
+    
 #[derive(Debug)]
 enum PushPullRegister {
     A,
@@ -63,10 +83,10 @@ enum IndexedIndirect {
 
 // Type1 instructions have a single operand,
 // which can be an immediate value or a direct, extended,
-// or indexed memory location.
+// or indexed/indirect memory location.
 // The type parameter T is used to distinguish between 8-bit and 16-bit immediate values.
 #[derive(Debug)]
-enum Type1<T> {
+enum Type1<T: IntoBytes> {
     IMM(T),
     DIR(u8),
     EXT(u16),
@@ -74,7 +94,7 @@ enum Type1<T> {
 }
 
 // Type2 instructions have a single operand,
-// which can be a direct, extended, or indexed memory location.
+// which can be a direct, extended, or indexed/indirect memory location.
 #[derive(Debug)]
 enum Type2 {
     DIR(u8),
@@ -323,6 +343,57 @@ struct Segment {
     name: String,
     elements: Vec<Element>
 }
+
+fn gen_bytes<T: IntoBytes + Copy>(a: T) -> Vec<u8> {
+    T::to_be_bytes(a)
+}
+
+fn encode_type1_opcode<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
+    let mut bytes: Vec<u8> = Vec::new();
+    if (opcode > 0xFF) {
+        bytes.push((opcode >> 8) as u8);
+    }
+    bytes.extend(match operand {
+        Type1::IMM(_) => vec![(opcode as u8) | 0x00],
+        Type1::DIR(_) => vec![(opcode as u8) | 0x10],
+        Type1::EXT(_) => vec![(opcode as u8) | 0x30],
+        Type1::IND(_) => vec![(opcode as u8) | 0x20],
+    });
+    bytes
+}
+
+fn encode_type1_operand<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
+    match operand {
+        Type1::IMM(value) => gen_bytes::<T>(*value),
+        Type1::DIR(addr) => vec![(opcode as u8) | 0x10, *addr],
+        Type1::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
+        Type1::IND(indirect) => unimplemented!("*** Indexed indirect operands are not implemented in this example ***"),
+    }
+}
+
+fn encode_type1<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
+    let mut bytes = encode_type1_opcode(opcode, operand);
+    bytes.extend(encode_type1_operand(opcode, operand));
+    bytes
+}
+
+fn encode_instruction(instr: &Instruction) -> Vec<u8> {
+    // This is a placeholder implementation. In a real assembler, this function would
+    // need to handle all the different instruction formats and addressing modes.
+    match instr {
+        Instruction::ABX => vec![0x3A],
+        Instruction::ADDA(operand) => {
+            encode_type1(0x8B, operand) // Opcode for ADDA with immediate operand
+        },
+        Instruction::ADDB(operand) => {
+            encode_type1(0xCB, operand) // Opcode for ADDB with immediate operand
+        },
+        Instruction::ADDD(operand) => {
+            encode_type1(0xC3, operand) // Opcode for ADDD with immediate operand
+        },
+        _ => unimplemented!("*** Instruction not implemented in this example ***"),
+    }
+}
 fn main() {
     println!("Hello, world!");
     let mut seg = Segment {
@@ -337,6 +408,11 @@ fn main() {
     };
     let instr = Instruction::ADDA(Type1::IMM(42));
     println!("{:?}", instr);
+    println!("{:?}", encode_instruction(&instr));
+    seg.elements.push(Element::Inst(instr));
+    let instr = Instruction::ADDD(Type1::IMM(1042));
+    println!("{:?}", instr);
+    println!("{:?}", encode_instruction(&instr));
     seg.elements.push(Element::Inst(instr));
     let instr = Instruction::EXG(Typext::from_tfr_exg_registers8(TfrExgRegister8::A, TfrExgRegister8::B));
     println!("{:?}", instr);
