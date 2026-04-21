@@ -405,9 +405,9 @@ fn encode_type2_opcode(opcode: u16, operand: &Type2) -> Vec<u8> {
         bytes.push((opcode >> 8) as u8);
     }
     bytes.extend(match operand {
-        Type2::DIR(_) => vec![(opcode as u8) | 0x10],
-        Type2::EXT(_) => vec![(opcode as u8) | 0x30],
-        Type2::IND(_) => vec![(opcode as u8) | 0x20],
+        Type2::DIR(_) => vec![(opcode as u8) | 0x00],
+        Type2::EXT(_) => vec![(opcode as u8) | 0x70],
+        Type2::IND(_) => vec![(opcode as u8) | 0x60],
     });
     bytes
 }
@@ -426,6 +426,10 @@ fn encode_type2(opcode: u16, operand: &Type2) -> Vec<u8> {
     bytes
 }
 
+fn encode_typecc(opcode: u8, operand: &Typecc) -> Vec<u8> {
+    vec![opcode, operand.mask]
+}
+
 fn encode_instruction(instr: &Instruction) -> Vec<u8> {
     // This is a placeholder implementation. In a real assembler, this function would
     // need to handle all the different instruction formats and addressing modes.
@@ -438,6 +442,7 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::ADDD(operand) => encode_type1(0xC3, operand), // Base opcode for ADDD
         Instruction::ANDA(operand)  => encode_type1(0x84, operand), // Base opcode for ANDA
         Instruction::ANDB(operand)  => encode_type1(0xC4, operand), // Base opcode for ANDB
+        Instruction::ANDCC(operand) => encode_typecc(0x1C, operand), // Opcode for ANDCC
         Instruction::ASL(operand) => encode_type2(0x08, operand), // Base opcode for ASL
         Instruction::ASLA => encode_type0(0x48), // Opcode for ASLA (same as LSLA)
         Instruction::ASLB => encode_type0(0x58), // Opcode for ASLB (same as LSLB)
@@ -464,6 +469,7 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::COM(operand) => encode_type2(0x03, operand), // Base opcode for COM
         Instruction::COMA => encode_type0(0x43), // Opcode for COMA
         Instruction::COMB => encode_type0(0x53), // Opcode for COMB
+        Instruction::CWAI(operand) => encode_typecc(0x3C, operand), // Opcode for CWAI
         Instruction::DAA  => encode_type0(0x19), // Opcode for DAA
         Instruction::DEC(operand) => encode_type2(0x0A, operand), // Base opcode for DEC
         Instruction::DECA => encode_type0(0x4A), // Opcode for DECA
@@ -493,6 +499,7 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::NOP  => encode_type0(0x12), // Opcode for NOP
         Instruction::ORA(operand) => encode_type1(0x8A, operand), // Base opcode for ORA
         Instruction::ORB(operand) => encode_type1(0xCA, operand), // Base opcode for ORB
+        Instruction::ORCC(operand) => encode_typecc(0x1A, operand), // Opcode for ORCC
         Instruction::ROL(operand) => encode_type2(0x09, operand), // Base opcode for ROL
         Instruction::ROLA => encode_type0(0x49), // Opcode for ROLA
         Instruction::ROLB => encode_type0(0x59), // Opcode for ROLB
@@ -531,7 +538,6 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
     }
 }
 fn main() {
-    println!("Hello, world!");
     let mut seg = Segment {
         name: "CODE".to_string(),
         elements: vec![
@@ -543,12 +549,10 @@ fn main() {
         ]
     };
     let instr = Instruction::ADDA(Type1::IMM(42));
-    println!("{:?}", instr);
-    println!("{:?}", encode_instruction(&instr));
+    println!("{:?} -> {:?}", instr, encode_instruction(&instr));
     seg.elements.push(Element::Inst(instr));
     let instr = Instruction::ADDD(Type1::IMM(1042));
-    println!("{:?}", instr);
-    println!("{:?}", encode_instruction(&instr));
+    println!("{:?} -> {:?}", instr, encode_instruction(&instr));
     seg.elements.push(Element::Inst(instr));
     let instr = Instruction::EXG(Typext::from_tfr_exg_registers8(TfrExgRegister8::A, TfrExgRegister8::B));
     println!("{:?}", instr);
