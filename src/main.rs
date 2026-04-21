@@ -362,6 +362,14 @@ fn gen_bytes<T: IntoBytes + Copy>(a: T) -> Vec<u8> {
     T::to_be_bytes(a)
 }
 
+fn encode_type0(opcode: u16) -> Vec<u8> {
+    if opcode > 0xFF {
+        vec![(opcode >> 8) as u8, opcode as u8]
+    } else {
+        vec![opcode as u8]
+    }
+}
+
 fn encode_type1_opcode<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
     let mut bytes: Vec<u8> = Vec::new();
     if opcode > 0xFF {
@@ -395,16 +403,45 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
     // This is a placeholder implementation. In a real assembler, this function would
     // need to handle all the different instruction formats and addressing modes.
     match instr {
-        Instruction::ABX => vec![0x3A],
-        Instruction::ADDA(operand) => {
-            encode_type1(0x8B, operand) // Opcode for ADDA with immediate operand
-        },
-        Instruction::ADDB(operand) => {
-            encode_type1(0xCB, operand) // Opcode for ADDB with immediate operand
-        },
-        Instruction::ADDD(operand) => {
-            encode_type1(0xC3, operand) // Opcode for ADDD with immediate operand
-        },
+        Instruction::ABX => encode_type0(0x3A), // Opcode for ABX
+        Instruction::ADDA(operand)  => encode_type1(0x8B, operand), // Base opcode for ADDA
+        Instruction::ADDB(operand)  => encode_type1(0xCB, operand), // Base opcode for ADDB
+        Instruction::ADDD(operand) => encode_type1(0xC3, operand), // Base opcode for ADDD
+        Instruction::ASLA => encode_type0(0x48), // Opcode for ASLA (same as LSLA)
+        Instruction::ASLB => encode_type0(0x58), // Opcode for ASLB (same as LSLB)
+        Instruction::ASRA => encode_type0(0x47), // Opcode for ASRA
+        Instruction::ASRB => encode_type0(0x57), // Opcode for ASRB
+        Instruction::CLRA => encode_type0(0x4F), // Opcode for CLRA
+        Instruction::CLRB => encode_type0(0x5F), // Opcode for CLRB
+        Instruction::COMA => encode_type0(0x43), // Opcode for COMA
+        Instruction::COMB => encode_type0(0x53), // Opcode for COMB
+        Instruction::DAA  => encode_type0(0x19), // Opcode for DAA
+        Instruction::DECA => encode_type0(0x4A), // Opcode for DECA
+        Instruction::DECB => encode_type0(0x5A), // Opcode for DECB
+        Instruction::INCA => encode_type0(0x4C), // Opcode for INCA
+        Instruction::INCB => encode_type0(0x5C), // Opcode for INCB
+        Instruction::LSLA => encode_type0(0x48), // Opcode for LSLA (same as ASLA)
+        Instruction::LSLB => encode_type0(0x58), // Opcode for LSLB (same as ASLB)
+        Instruction::LSRA => encode_type0(0x44), // Opcode for LSRA
+        Instruction::LSRB => encode_type0(0x54), // Opcode for LSRB
+        Instruction::MUL  => encode_type0(0x3D), // Opcode for MUL
+        Instruction::NEGA => encode_type0(0x40), // Opcode for NEGA
+        Instruction::NEGB => encode_type0(0x50), // Opcode for NEGB
+        Instruction::NOP  => encode_type0(0x12), // Opcode for NOP
+        Instruction::ROLA => encode_type0(0x49), // Opcode for ROLA
+        Instruction::ROLB => encode_type0(0x59), // Opcode for ROLB
+        Instruction::RORA => encode_type0(0x46), // Opcode for RORA
+        Instruction::RORB => encode_type0(0x56), // Opcode for RORB
+        Instruction::RTI  => encode_type0(0x3B), // Opcode for RTI
+        Instruction::RTS  => encode_type0(0x39), // Opcode for RTS
+        Instruction::SEX  => encode_type0(0x1D), // Opcode for SEX
+        Instruction::SWI  => encode_type0(0x3F), // Opcode for SWI
+        Instruction::SWI2 => encode_type0(0x103F), // Opcode for SWI2 (two-byte opcode)
+        Instruction::SWI3 => encode_type0(0x113F), // Opcode for SWI3 (two-byte opcode)
+        Instruction::SYNC => encode_type0(0x13), // Opcode for SYNC
+        Instruction::TSTA => encode_type0(0x4D), // Opcode for TSTA
+        Instruction::TSTB => encode_type0(0x5D), // Opcode for TSTB
+
         _ => unimplemented!("*** Instruction not implemented in this example ***"),
     }
 }
