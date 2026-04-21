@@ -399,6 +399,33 @@ fn encode_type1<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8>
     bytes
 }
 
+fn encode_type2_opcode(opcode: u16, operand: &Type2) -> Vec<u8> {
+    let mut bytes: Vec<u8> = Vec::new();
+    if opcode > 0xFF {
+        bytes.push((opcode >> 8) as u8);
+    }
+    bytes.extend(match operand {
+        Type2::DIR(_) => vec![(opcode as u8) | 0x10],
+        Type2::EXT(_) => vec![(opcode as u8) | 0x30],
+        Type2::IND(_) => vec![(opcode as u8) | 0x20],
+    });
+    bytes
+}
+
+fn encode_type2_operand(operand: &Type2) -> Vec<u8> {
+    match operand {
+        Type2::DIR(addr) => vec![*addr],
+        Type2::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
+        Type2::IND(indirect) => unimplemented!("*** Indexed indirect operands are not implemented in this example ***"),
+    }
+}
+
+fn encode_type2(opcode: u16, operand: &Type2) -> Vec<u8> {
+    let mut bytes = encode_type2_opcode(opcode, operand);
+    bytes.extend(encode_type2_operand(operand));
+    bytes
+}
+
 fn encode_instruction(instr: &Instruction) -> Vec<u8> {
     // This is a placeholder implementation. In a real assembler, this function would
     // need to handle all the different instruction formats and addressing modes.
@@ -411,8 +438,10 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::ADDD(operand) => encode_type1(0xC3, operand), // Base opcode for ADDD
         Instruction::ANDA(operand)  => encode_type1(0x84, operand), // Base opcode for ANDA
         Instruction::ANDB(operand)  => encode_type1(0xC4, operand), // Base opcode for ANDB
+        Instruction::ASL(operand) => encode_type2(0x08, operand), // Base opcode for ASL
         Instruction::ASLA => encode_type0(0x48), // Opcode for ASLA (same as LSLA)
         Instruction::ASLB => encode_type0(0x58), // Opcode for ASLB (same as LSLB)
+        Instruction::ASR(operand) => encode_type2(0x07, operand), // Base opcode for ASR
         Instruction::ASRA => encode_type0(0x47), // Opcode for ASRA
         Instruction::ASRB => encode_type0(0x57), // Opcode for ASRB
         Instruction::BITA(operand) => encode_type1(0x85, operand), // Base opcode for BITA
@@ -421,6 +450,7 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::CLF  => encode_type0(0x1CBF), // ANDCC #$BF (clear fast interrupt disable)
         Instruction::CLI  => encode_type0(0x1CEF), // ANDCC #$EF (clear interrupt disable)
         Instruction::CLIF => encode_type0(0x1CAF), // ANDCC #$AF (clear interrupt disables)
+        Instruction::CLR(operand)  => encode_type2(0x0F, operand), // Opcode for CLR
         Instruction::CLRA => encode_type0(0x4F), // Opcode for CLRA
         Instruction::CLRB => encode_type0(0x5F), // Opcode for CLRB
         Instruction::CLV  => encode_type0(0x1CFD), // ANDCC #$FD (clear overflow)
@@ -431,13 +461,16 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::CMPU(operand) => encode_type1(0x1183, operand), // Base opcode for CMPU
         Instruction::CMPX(operand) => encode_type1(0x8C,   operand), // Base opcode for CMPX
         Instruction::CMPY(operand) => encode_type1(0x108C, operand), // Base opcode for CMPY
+        Instruction::COM(operand) => encode_type2(0x03, operand), // Base opcode for COM
         Instruction::COMA => encode_type0(0x43), // Opcode for COMA
         Instruction::COMB => encode_type0(0x53), // Opcode for COMB
         Instruction::DAA  => encode_type0(0x19), // Opcode for DAA
+        Instruction::DEC(operand) => encode_type2(0x0A, operand), // Base opcode for DEC
         Instruction::DECA => encode_type0(0x4A), // Opcode for DECA
         Instruction::DECB => encode_type0(0x5A), // Opcode for DECB
         Instruction::EORA(operand) => encode_type1(0x88, operand), // Base opcode for EORA
         Instruction::EORB(operand) => encode_type1(0xC8, operand), // Base opcode for EORB
+        Instruction::INC(operand) => encode_type2(0x0C, operand), // Base opcode for INC
         Instruction::INCA => encode_type0(0x4C), // Opcode for INCA
         Instruction::INCB => encode_type0(0x5C), // Opcode for INCB
         Instruction::LDA(operand)  => encode_type1(0x86,   operand), // Base opcode for LDA
@@ -447,18 +480,23 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::LDU(operand) => encode_type1(0xCE,   operand), // Base opcode for LDU
         Instruction::LDX(operand) => encode_type1(0x8E,   operand), // Base opcode for LDX
         Instruction::LDY(operand) => encode_type1(0x108E, operand), // Base opcode for LDY
+        Instruction::LSL(operand) => encode_type2(0x08, operand), // Base opcode for LSL (same as ASL)
         Instruction::LSLA => encode_type0(0x48), // Opcode for LSLA (same as ASLA)
         Instruction::LSLB => encode_type0(0x58), // Opcode for LSLB (same as ASLB)
+        Instruction::LSR(operand) => encode_type2(0x04, operand), // Base opcode for LSR
         Instruction::LSRA => encode_type0(0x44), // Opcode for LSRA
         Instruction::LSRB => encode_type0(0x54), // Opcode for LSRB
         Instruction::MUL  => encode_type0(0x3D), // Opcode for MUL
+        Instruction::NEG(operand) => encode_type2(0x00, operand), // Base opcode for NEG
         Instruction::NEGA => encode_type0(0x40), // Opcode for NEGA
         Instruction::NEGB => encode_type0(0x50), // Opcode for NEGB
         Instruction::NOP  => encode_type0(0x12), // Opcode for NOP
         Instruction::ORA(operand) => encode_type1(0x8A, operand), // Base opcode for ORA
         Instruction::ORB(operand) => encode_type1(0xCA, operand), // Base opcode for ORB
+        Instruction::ROL(operand) => encode_type2(0x09, operand), // Base opcode for ROL
         Instruction::ROLA => encode_type0(0x49), // Opcode for ROLA
         Instruction::ROLB => encode_type0(0x59), // Opcode for ROLB
+        Instruction::ROR(operand) => encode_type2(0x06, operand), // Base opcode for ROR
         Instruction::RORA => encode_type0(0x46), // Opcode for RORA
         Instruction::RORB => encode_type0(0x56), // Opcode for RORB
         Instruction::RTI  => encode_type0(0x3B), // Opcode for RTI
@@ -470,13 +508,13 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::SEI  => encode_type0(0x1A10), // ORCC #$10 (set interrupt disable)
         Instruction::SEIF => encode_type0(0x1A50), // ORCC #$50 (set both interrupt disables)
         Instruction::SEV  => encode_type0(0x1A02), // ORCC #$02 (set overflow)
-//        Instruction::STA(operand) => encode_type1(0x97, operand), // Base opcode for STA
-//        Instruction::STB(operand) => encode_type1(0xD7, operand), // Base opcode for STB
-//        Instruction::STD(operand) => encode_type1(0xDD, operand), // Base opcode for STD
-//        Instruction::STS(operand) => encode_type1(0x10DF, operand), // Base opcode for STS
-//        Instruction::STU(operand) => encode_type1(0xDF, operand), // Base opcode for STU
-//        Instruction::STX(operand) => encode_type1(0x9F, operand), // Base opcode for STX
-//        Instruction::STY(operand) => encode_type1(0x109F, operand), // Base opcode for STY
+        Instruction::STA(operand) => encode_type2(0x97,   operand), // Base opcode for STA
+        Instruction::STB(operand) => encode_type2(0xD7,   operand), // Base opcode for STB
+        Instruction::STD(operand) => encode_type2(0xDD,   operand), // Base opcode for STD
+        Instruction::STS(operand) => encode_type2(0x10DF, operand), // Base opcode for STS
+        Instruction::STU(operand) => encode_type2(0xDF,   operand), // Base opcode for STU
+        Instruction::STX(operand) => encode_type2(0x9F,   operand), // Base opcode for STX
+        Instruction::STY(operand) => encode_type2(0x109F, operand), // Base opcode for STY
         Instruction::SUBA(operand)  => encode_type1(0x80, operand), // Base opcode for SUBA
         Instruction::SUBB(operand)  => encode_type1(0xC0, operand), // Base opcode for SUBB
         Instruction::SUBD(operand) => encode_type1(0x83, operand), // Base opcode for SUBD
@@ -485,6 +523,7 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::SWI2 => encode_type0(0x103F), // Opcode for SWI2 (two-byte opcode)
         Instruction::SWI3 => encode_type0(0x113F), // Opcode for SWI3 (two-byte opcode)
         Instruction::SYNC => encode_type0(0x13), // Opcode for SYNC
+        Instruction::TST(operand) => encode_type2(0x0D, operand), // Base opcode for TST
         Instruction::TSTA => encode_type0(0x4D), // Opcode for TSTA
         Instruction::TSTB => encode_type0(0x5D), // Opcode for TSTB
 
