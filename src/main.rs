@@ -430,6 +430,33 @@ fn encode_typecc(opcode: u8, operand: &Typecc) -> Vec<u8> {
     vec![opcode, operand.mask]
 }
 
+fn encode_typext(opcode: u8, operand: &Typext) -> Vec<u8> {
+    fn register_code_8(reg: &TfrExgRegister8) -> u8 {
+        match reg {
+            TfrExgRegister8::A => 8,
+            TfrExgRegister8::B => 9,
+            TfrExgRegister8::CC => 10,
+            TfrExgRegister8::DP => 11,
+        }
+    }
+    fn register_code_16(reg: &TfrExgRegister16) -> u8 {
+        match reg {
+            TfrExgRegister16::D => 0,
+            TfrExgRegister16::X => 1,
+            TfrExgRegister16::Y => 2,
+            TfrExgRegister16::U => 3,
+            TfrExgRegister16::S => 4,
+            TfrExgRegister16::PC => 5,
+        }
+    }
+    vec![opcode,
+        match operand {
+                Typext::BYTE(r1, r2) => (register_code_8(r1) << 4)  | register_code_8(r2),
+                Typext::WORD(r1, r2) => (register_code_16(r1) << 4) | register_code_16(r2)  
+            }
+    ]
+}
+
 fn encode_instruction(instr: &Instruction) -> Vec<u8> {
     // This is a placeholder implementation. In a real assembler, this function would
     // need to handle all the different instruction formats and addressing modes.
@@ -476,6 +503,7 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::DECB => encode_type0(0x5A), // Opcode for DECB
         Instruction::EORA(operand) => encode_type1(0x88, operand), // Base opcode for EORA
         Instruction::EORB(operand) => encode_type1(0xC8, operand), // Base opcode for EORB
+        Instruction::EXG(operand) => encode_typext(0x1E, operand), // Opcode for EXG
         Instruction::INC(operand) => encode_type2(0x0C, operand), // Base opcode for INC
         Instruction::INCA => encode_type0(0x4C), // Opcode for INCA
         Instruction::INCB => encode_type0(0x5C), // Opcode for INCB
@@ -530,6 +558,7 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::SWI2 => encode_type0(0x103F), // Opcode for SWI2 (two-byte opcode)
         Instruction::SWI3 => encode_type0(0x113F), // Opcode for SWI3 (two-byte opcode)
         Instruction::SYNC => encode_type0(0x13), // Opcode for SYNC
+        Instruction::TFR(operand) => encode_typext(0x1F, operand), // Opcode for TFR
         Instruction::TST(operand) => encode_type2(0x0D, operand), // Base opcode for TST
         Instruction::TSTA => encode_type0(0x4D), // Opcode for TSTA
         Instruction::TSTB => encode_type0(0x5D), // Opcode for TSTB
@@ -555,7 +584,7 @@ fn main() {
     println!("{:?} -> {:?}", instr, encode_instruction(&instr));
     seg.elements.push(Element::Inst(instr));
     let instr = Instruction::EXG(Typext::from_tfr_exg_registers8(TfrExgRegister8::A, TfrExgRegister8::B));
-    println!("{:?}", instr);
+    println!("{:?} -> {:?}", instr, encode_instruction(&instr));
     seg.elements.push(Element::Inst(instr));
     println!("{:?}", seg);
 
