@@ -19,7 +19,21 @@ impl IntoBytes for u16 {
         a.to_be_bytes().to_vec()
     }
 }
-    
+
+// The following enums and structs represent the various instruction formats and operand types for the 6809.
+// The orgaisation of these types follows the principle of "Make invalid states unrepresentable", so that,
+// for example, an instruction that can only take an immediate operand cannot be constructed with a direct or extended operand.
+// Any instruction that can be constructed using these types is guaranteed to be valid, and any attempt to
+// construct an invalid instruction will result in a compile-time error. This makes the assembler more robust
+// and easier to maintain, as it eliminates the possibility of invalid instructions being generated due to programmer error
+// and removes any need for error-checking in the code generation functions.
+// Also, the types used to represent instructions are independent of the encoding of those instructions, so that
+// the same instruction can be encoded in different ways without changing the underlying representation of the instruction itself.
+// For example, the number of bytes used for the opcodes, and the bit values used to encode those opcodes, form no part of
+// the instruction representation, and are handled separately in the encode_instruction function.
+// The encoding of the instruction is handled separately in the encode_instruction function, which takes care of generating the correct opcode and operand bytes based on the instruction format and addressing mode.
+// This separation of concerns makes the code more modular and easier to understand.
+
 #[derive(Debug)]
 enum PushPullRegister {
     A,
@@ -350,7 +364,7 @@ fn gen_bytes<T: IntoBytes + Copy>(a: T) -> Vec<u8> {
 
 fn encode_type1_opcode<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
     let mut bytes: Vec<u8> = Vec::new();
-    if (opcode > 0xFF) {
+    if opcode > 0xFF {
         bytes.push((opcode >> 8) as u8);
     }
     bytes.extend(match operand {
@@ -362,10 +376,10 @@ fn encode_type1_opcode<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> 
     bytes
 }
 
-fn encode_type1_operand<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
+fn encode_type1_operand<T: IntoBytes + Copy>(operand: &Type1<T>) -> Vec<u8> {
     match operand {
         Type1::IMM(value) => gen_bytes::<T>(*value),
-        Type1::DIR(addr) => vec![(opcode as u8) | 0x10, *addr],
+        Type1::DIR(addr) => vec![*addr],
         Type1::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
         Type1::IND(indirect) => unimplemented!("*** Indexed indirect operands are not implemented in this example ***"),
     }
@@ -373,7 +387,7 @@ fn encode_type1_operand<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) ->
 
 fn encode_type1<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
     let mut bytes = encode_type1_opcode(opcode, operand);
-    bytes.extend(encode_type1_operand(opcode, operand));
+    bytes.extend(encode_type1_operand(operand));
     bytes
 }
 
