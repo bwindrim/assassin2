@@ -370,57 +370,59 @@ fn encode_type0(opcode: u16) -> Vec<u8> {
     }
 }
 
-fn encode_type1_opcode<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
-    let mut bytes: Vec<u8> = Vec::new();
-    if opcode > 0xFF {
-        bytes.push((opcode >> 8) as u8);
-    }
-    bytes.extend(match operand {
-        Type1::IMM(_) => vec![(opcode as u8) | 0x00],
-        Type1::DIR(_) => vec![(opcode as u8) | 0x10],
-        Type1::EXT(_) => vec![(opcode as u8) | 0x30],
-        Type1::IND(_) => vec![(opcode as u8) | 0x20],
-    });
-    bytes
-}
-
-fn encode_type1_operand<T: IntoBytes + Copy>(operand: &Type1<T>) -> Vec<u8> {
-    match operand {
-        Type1::IMM(value) => gen_bytes::<T>(*value),
-        Type1::DIR(addr) => vec![*addr],
-        Type1::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
-        Type1::IND(indirect) => unimplemented!("*** Indexed indirect operands are not implemented in this example ***"),
-    }
-}
-
 fn encode_type1<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
+
+    fn encode_type1_opcode<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+        if opcode > 0xFF {
+            bytes.push((opcode >> 8) as u8);
+        }
+        bytes.extend(match operand {
+            Type1::IMM(_) => vec![(opcode as u8) | 0x00],
+            Type1::DIR(_) => vec![(opcode as u8) | 0x10],
+            Type1::EXT(_) => vec![(opcode as u8) | 0x30],
+            Type1::IND(_) => vec![(opcode as u8) | 0x20],
+        });
+        bytes
+    }
+
+    fn encode_type1_operand<T: IntoBytes + Copy>(operand: &Type1<T>) -> Vec<u8> {
+        match operand {
+            Type1::IMM(value) => gen_bytes::<T>(*value),
+            Type1::DIR(addr) => vec![*addr],
+            Type1::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
+            Type1::IND(indirect) => unimplemented!("*** Indexed indirect operands are not implemented in this example ***"),
+        }
+    }
+
     let mut bytes = encode_type1_opcode(opcode, operand);
     bytes.extend(encode_type1_operand(operand));
     bytes
 }
 
-fn encode_type2_opcode(opcode: u16, operand: &Type2) -> Vec<u8> {
-    let mut bytes: Vec<u8> = Vec::new();
-    if opcode > 0xFF {
-        bytes.push((opcode >> 8) as u8);
-    }
-    bytes.extend(match operand {
-        Type2::DIR(_) => vec![(opcode as u8) | 0x00],
-        Type2::EXT(_) => vec![(opcode as u8) | 0x70],
-        Type2::IND(_) => vec![(opcode as u8) | 0x60],
-    });
-    bytes
-}
-
-fn encode_type2_operand(operand: &Type2) -> Vec<u8> {
-    match operand {
-        Type2::DIR(addr) => vec![*addr],
-        Type2::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
-        Type2::IND(indirect) => unimplemented!("*** Indexed indirect operands are not implemented in this example ***"),
-    }
-}
-
 fn encode_type2(opcode: u16, operand: &Type2) -> Vec<u8> {
+
+    fn encode_type2_opcode(opcode: u16, operand: &Type2) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+        if opcode > 0xFF {
+            bytes.push((opcode >> 8) as u8);
+        }
+        bytes.extend(match operand {
+            Type2::DIR(_) => vec![(opcode as u8) | 0x00],
+            Type2::EXT(_) => vec![(opcode as u8) | 0x70],
+            Type2::IND(_) => vec![(opcode as u8) | 0x60],
+        });
+        bytes
+    }
+
+    fn encode_type2_operand(operand: &Type2) -> Vec<u8> {
+        match operand {
+            Type2::DIR(addr) => vec![*addr],
+            Type2::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
+            Type2::IND(indirect) => unimplemented!("*** Indexed indirect operands are not implemented in this example ***"),
+        }
+    }
+
     let mut bytes = encode_type2_opcode(opcode, operand);
     bytes.extend(encode_type2_operand(operand));
     bytes
@@ -431,6 +433,7 @@ fn encode_typecc(opcode: u8, operand: &Typecc) -> Vec<u8> {
 }
 
 fn encode_typext(opcode: u8, operand: &Typext) -> Vec<u8> {
+
     fn register_code_8(reg: &TfrExgRegister8) -> u8 {
         match reg {
             TfrExgRegister8::A => 8,
@@ -439,6 +442,7 @@ fn encode_typext(opcode: u8, operand: &Typext) -> Vec<u8> {
             TfrExgRegister8::DP => 11,
         }
     }
+
     fn register_code_16(reg: &TfrExgRegister16) -> u8 {
         match reg {
             TfrExgRegister16::D => 0,
@@ -449,12 +453,30 @@ fn encode_typext(opcode: u8, operand: &Typext) -> Vec<u8> {
             TfrExgRegister16::PC => 5,
         }
     }
+
     vec![opcode,
         match operand {
                 Typext::BYTE(r1, r2) => (register_code_8(r1) << 4)  | register_code_8(r2),
                 Typext::WORD(r1, r2) => (register_code_16(r1) << 4) | register_code_16(r2)  
             }
     ]
+}
+
+fn encode_typepspl(opcode: u8, operand: &Typepspl) -> Vec<u8> {
+    let mut mask: u8 = 0;
+    for reg in &operand.registers {
+        mask |= match reg {
+            PushPullRegister::CC => 0x01,
+            PushPullRegister::A  => 0x02,
+            PushPullRegister::B  => 0x04,
+            PushPullRegister::DP => 0x08,
+            PushPullRegister::X  => 0x10,
+            PushPullRegister::Y  => 0x20,
+            PushPullRegister::US => 0x40,
+            PushPullRegister::PC => 0x80,
+        };
+    }
+    vec![opcode, mask]
 }
 
 fn encode_instruction(instr: &Instruction) -> Vec<u8> {
@@ -528,6 +550,10 @@ fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::ORA(operand) => encode_type1(0x8A, operand), // Base opcode for ORA
         Instruction::ORB(operand) => encode_type1(0xCA, operand), // Base opcode for ORB
         Instruction::ORCC(operand) => encode_typecc(0x1A, operand), // Opcode for ORCC
+        Instruction::PSHS(operand) => encode_typepspl(0x34, operand), // Opcode for PSHS
+        Instruction::PSHU(operand) => encode_typepspl(0x36, operand), // Opcode for PSHU
+        Instruction::PULS(operand) => encode_typepspl(0x35, operand), // Opcode for PULS
+        Instruction::PULU(operand) => encode_typepspl(0x37, operand), // Opcode for PULU
         Instruction::ROL(operand) => encode_type2(0x09, operand), // Base opcode for ROL
         Instruction::ROLA => encode_type0(0x49), // Opcode for ROLA
         Instruction::ROLB => encode_type0(0x59), // Opcode for ROLB
