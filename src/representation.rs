@@ -81,21 +81,21 @@ pub enum AccOffsetRegister {
 
 #[derive(Debug)]
 pub enum IndexedIndirect {
-    CONST     { offset: u16, reg: IndexRegister },
-    CONST_IND { offset: u16, reg: IndexRegister },
-    ACC       { offset: AccOffsetRegister, reg: IndexRegister },
-    ACC_IND   { offset: AccOffsetRegister, reg: IndexRegister },
-    INC_1     { reg: IndexRegister },
-    INC_2     { reg: IndexRegister },
-    INC_2_IND { reg: IndexRegister },
-    DEC_1     { reg: IndexRegister },
-    DEC_2     { reg: IndexRegister },
-    DEC_2_IND { reg: IndexRegister },
-    PCR       { target: u16 },
-    PCR_IND   { target: u16 },
-    PC        { offset: u16 }, 
-    PC_IND    { offset: u16 }, 
-    EXT_IND(u16)
+    Const     { offset: u16, reg: IndexRegister },
+    ConstInd  { offset: u16, reg: IndexRegister },
+    Acc       { offset: AccOffsetRegister, reg: IndexRegister },
+    AccInd    { offset: AccOffsetRegister, reg: IndexRegister },
+    Inc1      { reg: IndexRegister },
+    Inc2      { reg: IndexRegister },
+    Inc2Ind   { reg: IndexRegister },
+    Dec1      { reg: IndexRegister },
+    Dec2      { reg: IndexRegister },
+    Dec2Ind   { reg: IndexRegister },
+    Pcr       { target: u16 },
+    PcrInd    { target: u16 },
+    Pc        { offset: u16 }, 
+    PcInd     { offset: u16 }, 
+    ExtInd(u16)
 }
 
 // Type1 instructions have a single operand,

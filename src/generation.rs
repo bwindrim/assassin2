@@ -12,7 +12,7 @@ fn encode_indexed_indirect(operand: &IndexedIndirect) -> Vec<u8> {
     }
 
     match operand {
-        IndexedIndirect::CONST { offset, reg } => {
+        IndexedIndirect::Const { offset, reg } => {
             match offset {
                 0      => vec![0x80 | reg_field(reg)], // no offset
                 1..=7  => vec![0x00 | reg_field(reg) | *offset as u8], // 5-bit offset
@@ -20,58 +20,58 @@ fn encode_indexed_indirect(operand: &IndexedIndirect) -> Vec<u8> {
                 _      => vec![0x89 | reg_field(reg), (*offset >> 8) as u8, *offset as u8], // 16-bit offset
             }
         },
-        IndexedIndirect::CONST_IND { offset, reg } => {
+        IndexedIndirect::ConstInd { offset, reg } => {
             match offset {
                 0      => vec![0x94 | reg_field(reg)], // no offset
                 8..=15 => vec![0x98 | reg_field(reg), *offset as u8], // 8-bit offset
                 _      => vec![0x99 | reg_field(reg), (*offset >> 8) as u8, *offset as u8], // 16-bit offset
             }
         },
-        IndexedIndirect::ACC { offset, reg } => {
+        IndexedIndirect::Acc { offset, reg } => {
             match offset {
                 AccOffsetRegister::A => vec![0x86 | reg_field(reg)], // A offset
                 AccOffsetRegister::B => vec![0x85 | reg_field(reg)], // B offset
                 AccOffsetRegister::D => vec![0x8B | reg_field(reg)], // D offset
             }
         },
-        IndexedIndirect::ACC_IND { offset, reg } => {
+        IndexedIndirect::AccInd { offset, reg } => {
             match offset {
                 AccOffsetRegister::A => vec![0x96 | reg_field(reg)], // A offset indirect
                 AccOffsetRegister::B => vec![0x95 | reg_field(reg)], // B offset indirect
                 AccOffsetRegister::D => vec![0x9B | reg_field(reg)], // D offset indirect
             }
         },
-        IndexedIndirect::INC_1 { reg }     => vec![reg_field(reg) | 0x80], // Increment by 1
-        IndexedIndirect::INC_2 { reg }     => vec![reg_field(reg) | 0x81], // Increment by 2
-        IndexedIndirect::INC_2_IND { reg } => vec![reg_field(reg) | 0x91], // Increment by 2, indirect
-        IndexedIndirect::DEC_1 { reg }     => vec![reg_field(reg) | 0x82], // Decrement by 1
-        IndexedIndirect::DEC_2 { reg }     => vec![reg_field(reg) | 0x83], // Decrement by 2
-        IndexedIndirect::DEC_2_IND { reg } => vec![reg_field(reg) | 0x93], // Decrement by 2, indirect
-        IndexedIndirect::PCR { target } => 
+        IndexedIndirect::Inc1 { reg }     => vec![reg_field(reg) | 0x80], // Increment by 1
+        IndexedIndirect::Inc2 { reg }     => vec![reg_field(reg) | 0x81], // Increment by 2
+        IndexedIndirect::Inc2Ind { reg } => vec![reg_field(reg) | 0x91], // Increment by 2, indirect
+        IndexedIndirect::Dec1 { reg }     => vec![reg_field(reg) | 0x82], // Decrement by 1
+        IndexedIndirect::Dec2 { reg }     => vec![reg_field(reg) | 0x83], // Decrement by 2
+        IndexedIndirect::Dec2Ind { reg } => vec![reg_field(reg) | 0x93], // Decrement by 2, indirect
+        IndexedIndirect::Pcr { target } => 
             if *target as i16 >= -128 && *target as i16 <= 127 {
                 vec![0x8C, *target as u8] // PC-relative with 8-bit offset
             } else {
                 vec![0x8D, (*target >> 8) as u8, *target as u8] // PC-relative with 16-bit offset
             },
-        IndexedIndirect::PCR_IND { target } => 
+        IndexedIndirect::PcrInd { target } => 
             if *target as i16 >= -128 && *target as i16 <= 127 {
                 vec![0x9C, *target as u8] // PC-relative with 8-bit offset
             } else {
                 vec![0x9D, (*target >> 8) as u8, *target as u8] // PC-relative with 16-bit offset
             },
-        IndexedIndirect::PC { offset } => 
+        IndexedIndirect::Pc { offset } => 
             if *offset as i16 >= -128 && *offset as i16 <= 127 {
                 vec![0x8C, *offset as u8] // PC-relative with 8-bit offset
             } else {
                 vec![0x8D, (*offset >> 8) as u8, *offset as u8] // PC-relative with 16-bit offset
             },
-        IndexedIndirect::PC_IND { offset } => 
+        IndexedIndirect::PcInd { offset } => 
             if *offset as i16 >= -128 && *offset as i16 <= 127 {
                 vec![0x9C, *offset as u8] // PC-relative with 8-bit offset
             } else {
                 vec![0x9D, (*offset >> 8) as u8, *offset as u8] // PC-relative with 16-bit offset
             },
-        IndexedIndirect::EXT_IND(addr) => vec![0x9F, (*addr >> 8) as u8, *addr as u8], // Extended indirect
+        IndexedIndirect::ExtInd(addr) => vec![0x9F, (*addr >> 8) as u8, *addr as u8], // Extended indirect
     }
 }
 
