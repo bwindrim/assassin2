@@ -242,7 +242,7 @@ pub enum Instruction {
     INCB,
     INC(Type2),
     JMP(Type2),
-    JSR(Type1<u8>),
+    JSR(Type2),
     LBCC(Typebr),
     LBCS(Typebr),
     LBEQ(Typebr),
