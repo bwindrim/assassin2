@@ -81,8 +81,8 @@ pub enum AccOffsetRegister {
 
 #[derive(Debug)]
 pub enum IndexedIndirect {
-    Const     { offset: u16, reg: IndexRegister },
-    ConstInd  { offset: u16, reg: IndexRegister },
+    Const     { offset: i16, reg: IndexRegister },
+    ConstInd  { offset: i16, reg: IndexRegister },
     Acc       { offset: AccOffsetRegister, reg: IndexRegister },
     AccInd    { offset: AccOffsetRegister, reg: IndexRegister },
     Inc1      { reg: IndexRegister },

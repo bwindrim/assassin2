@@ -14,17 +14,17 @@ fn encode_indexed_indirect(operand: &IndexedIndirect) -> Vec<u8> {
     match operand {
         IndexedIndirect::Const { offset, reg } => {
             match offset {
-                0      => vec![0x80 | reg_field(reg)], // no offset
-                1..=7  => vec![0x00 | reg_field(reg) | *offset as u8], // 5-bit offset
-                8..=15 => vec![0x88 | reg_field(reg), *offset as u8], // 8-bit offset
-                _      => vec![0x89 | reg_field(reg), (*offset >> 8) as u8, *offset as u8], // 16-bit offset
+                0                     => vec![0x80 | reg_field(reg)], // no offset
+                -16..=-1 | 1..=15     => vec![0x00 | reg_field(reg) | (*offset as u8 & 0x1F)], // 5-bit offset
+                -128..=-17 | 16..=127 => vec![0x88 | reg_field(reg), *offset as u8], // 8-bit offset
+                _                     => vec![0x89 | reg_field(reg), (*offset >> 8) as u8, *offset as u8], // 16-bit offset
             }
         },
         IndexedIndirect::ConstInd { offset, reg } => {
             match offset {
-                0      => vec![0x94 | reg_field(reg)], // no offset
-                8..=15 => vec![0x98 | reg_field(reg), *offset as u8], // 8-bit offset
-                _      => vec![0x99 | reg_field(reg), (*offset >> 8) as u8, *offset as u8], // 16-bit offset
+                0          => vec![0x94 | reg_field(reg)], // no offset
+                -128..=127 => vec![0x98 | reg_field(reg), *offset as u8], // 8-bit offset
+                _          => vec![0x99 | reg_field(reg), (*offset >> 8) as u8, *offset as u8], // 16-bit offset
             }
         },
         IndexedIndirect::Acc { offset, reg } => {
