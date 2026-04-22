@@ -1,4 +1,4 @@
-use std::{collections::HashSet};
+use std::collections::HashSet;
 
 // Source - https://stackoverflow.com/a/72736737
 // Posted by gagiuntoli
@@ -43,7 +43,7 @@ pub enum PushPullRegister {
     US,
     PC,
     CC,
-    DP
+    DP,
 }
 
 #[derive(Debug)]
@@ -51,7 +51,7 @@ pub enum TfrExgRegister8 {
     A,
     B,
     CC,
-    DP
+    DP,
 }
 
 #[derive(Debug)]
@@ -61,7 +61,7 @@ pub enum TfrExgRegister16 {
     Y,
     U,
     S,
-    PC
+    PC,
 }
 
 #[derive(Debug)]
@@ -69,33 +69,65 @@ pub enum IndexRegister {
     X,
     Y,
     U,
-    S
+    S,
 }
 
 #[derive(Debug)]
 pub enum AccOffsetRegister {
     A,
     B,
-    D
+    D,
 }
 
 #[derive(Debug)]
 pub enum IndexedIndirect {
-    Const     { offset: i16, reg: IndexRegister },
-    ConstInd  { offset: i16, reg: IndexRegister },
-    Acc       { offset: AccOffsetRegister, reg: IndexRegister },
-    AccInd    { offset: AccOffsetRegister, reg: IndexRegister },
-    Inc1      { reg: IndexRegister },
-    Inc2      { reg: IndexRegister },
-    Inc2Ind   { reg: IndexRegister },
-    Dec1      { reg: IndexRegister },
-    Dec2      { reg: IndexRegister },
-    Dec2Ind   { reg: IndexRegister },
-    Pcr       { target: u16 },
-    PcrInd    { target: u16 },
-    Pc        { offset: u16 }, 
-    PcInd     { offset: u16 }, 
-    ExtInd(u16)
+    Const {
+        offset: i16,
+        reg: IndexRegister,
+    },
+    ConstInd {
+        offset: i16,
+        reg: IndexRegister,
+    },
+    Acc {
+        offset: AccOffsetRegister,
+        reg: IndexRegister,
+    },
+    AccInd {
+        offset: AccOffsetRegister,
+        reg: IndexRegister,
+    },
+    Inc1 {
+        reg: IndexRegister,
+    },
+    Inc2 {
+        reg: IndexRegister,
+    },
+    Inc2Ind {
+        reg: IndexRegister,
+    },
+    Dec1 {
+        reg: IndexRegister,
+    },
+    Dec2 {
+        reg: IndexRegister,
+    },
+    Dec2Ind {
+        reg: IndexRegister,
+    },
+    Pcr {
+        target: u16,
+    },
+    PcrInd {
+        target: u16,
+    },
+    Pc {
+        offset: u16,
+    },
+    PcInd {
+        offset: u16,
+    },
+    ExtInd(u16),
 }
 
 // Type1 instructions have a single operand,
@@ -130,14 +162,14 @@ impl From<IndexedIndirect> for Type2 {
 #[derive(Debug)]
 pub enum Typebr {
     RESOLVED(u16),
-    UNRESOLVED(String)
+    UNRESOLVED(String),
 }
 
 // Typepspl instructions have a list (actually a set) of operands,
 // which are registers to be pushed or pulled.
 #[derive(Debug)]
 pub struct Typepspl {
-    pub registers: HashSet<PushPullRegister>
+    pub registers: HashSet<PushPullRegister>,
 }
 
 impl std::ops::Deref for Typepspl {
@@ -152,7 +184,7 @@ impl std::ops::Deref for Typepspl {
 // which is a condition code mask.
 #[derive(Debug)]
 pub struct Typecc {
-    pub mask: u8
+    pub mask: u8,
 }
 
 // Typext instructions have a pair of operands,
@@ -160,8 +192,8 @@ pub struct Typecc {
 // depending on the instruction, but must be the same size.
 #[derive(Debug)]
 pub enum Typext {
-    BYTE( TfrExgRegister8, TfrExgRegister8 ),
-    WORD( TfrExgRegister16, TfrExgRegister16 )
+    BYTE(TfrExgRegister8, TfrExgRegister8),
+    WORD(TfrExgRegister16, TfrExgRegister16),
 }
 
 impl Typext {
@@ -343,24 +375,24 @@ pub enum Instruction {
     TFR(Typext),
     TSTA,
     TSTB,
-    TST(Type2)
+    TST(Type2),
 }
 
 #[derive(Debug)]
 pub enum Data {
     DB(Vec<u8>),
     DW(Vec<u16>),
-    DS(usize)
+    DS(usize),
 }
 #[derive(Debug)]
 pub enum Element {
     Inst(Instruction),
-    Data(Data)
+    Data(Data),
 }
 #[derive(Debug)]
 pub struct Segment {
     pub name: String,
-    pub elements: Vec<Element>
+    pub elements: Vec<Element>,
 }
 
 pub fn gen_bytes<T: IntoBytes + Copy>(a: T) -> Vec<u8> {
