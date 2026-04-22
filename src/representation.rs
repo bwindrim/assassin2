@@ -308,6 +308,8 @@ pub enum Instruction {
     SBLE(Typebr),
     SBGT(Typebr),
     SBGE(Typebr),
+    SBHI(Typebr),
+    SBHS(Typebr),
     SBLO(Typebr),
     SBLS(Typebr),
     SBMI(Typebr),

@@ -192,6 +192,10 @@ fn encode_typepspl(opcode: u8, operand: &Typepspl) -> Vec<u8> {
     vec![opcode, mask]
 }
 
+fn encode_typebr(opcode: u16, operand: &Typebr) -> Vec<u8> {
+    vec![]
+}
+
 pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
     // This is a placeholder implementation. In a real assembler, this function would
     // need to handle all the different instruction formats and addressing modes.
@@ -211,8 +215,27 @@ pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::ASR(operand) => encode_type2(0x07, operand), // Base opcode for ASR
         Instruction::ASRA => encode_type0(0x47), // Opcode for ASRA
         Instruction::ASRB => encode_type0(0x57), // Opcode for ASRB
+        Instruction::SBCC(operand) => encode_typebr(0x24, operand), // Opcode for BCC
+        Instruction::SBCS(operand) => encode_typebr(0x25, operand), // Opcode for BCS
+        Instruction::SBEQ(operand) => encode_typebr(0x27, operand), // Opcode for BEQ
+        Instruction::SBGE(operand) => encode_typebr(0x2C, operand), // Opcode for BGE
+        Instruction::SBGT(operand) => encode_typebr(0x2E, operand), // Opcode for BGT
+        Instruction::SBHI(operand) => encode_typebr(0x22, operand), // Opcode for BHI
+        Instruction::SBHS(operand) => encode_typebr(0x24, operand), // Opcode for BHS (same as BCC)
         Instruction::BITA(operand) => encode_type1(0x85, operand), // Base opcode for BITA
         Instruction::BITB(operand) => encode_type1(0xC5, operand), // Base opcode for BITB
+        Instruction::SBLE(operand) => encode_typebr(0x2F, operand), // Opcode for BLE
+        Instruction::SBLO(operand) => encode_typebr(0x25, operand), // Opcode for BLO
+        Instruction::SBLS(operand) => encode_typebr(0x23, operand), // Opcode for BLS
+        Instruction::SBLT(operand) => encode_typebr(0x2D, operand), // Opcode for BLT
+        Instruction::SBMI(operand) => encode_typebr(0x2B, operand), // Opcode for BMI
+        Instruction::SBNE(operand) => encode_typebr(0x26, operand), // Opcode for BNE
+        Instruction::SBPL(operand) => encode_typebr(0x2A, operand), // Opcode for BPL
+        Instruction::SBRA(operand) => encode_typebr(0x20, operand), // Opcode for BRA
+        Instruction::SBRN(operand) => encode_typebr(0x21, operand), // Opcode for BRN
+        Instruction::SBSR(operand) => encode_typebr(0x8D, operand), // Opcode for BSR
+        Instruction::SBVC(operand) => encode_typebr(0x28, operand), // Opcode for BVC
+        Instruction::SBVS(operand) => encode_typebr(0x29, operand), // Opcode for BVS
         Instruction::CLC  => encode_type0(0x1CFE), // ANDCC #$FE (clear carry)
         Instruction::CLF  => encode_type0(0x1CBF), // ANDCC #$BF (clear fast interrupt disable)
         Instruction::CLI  => encode_type0(0x1CEF), // ANDCC #$EF (clear interrupt disable)
@@ -242,6 +265,25 @@ pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::INC(operand) => encode_type2(0x0C, operand), // Base opcode for INC
         Instruction::INCA => encode_type0(0x4C), // Opcode for INCA
         Instruction::INCB => encode_type0(0x5C), // Opcode for INCB
+        Instruction::LBCC(operand) => encode_typebr(0x1024, operand), // Opcode for BCC
+        Instruction::LBCS(operand) => encode_typebr(0x1025, operand), // Opcode for BCS
+        Instruction::LBEQ(operand) => encode_typebr(0x1027, operand), // Opcode for BEQ
+        Instruction::LBGE(operand) => encode_typebr(0x102C, operand), // Opcode for BGE
+        Instruction::LBGT(operand) => encode_typebr(0x102E, operand), // Opcode for BGT
+        Instruction::LBHI(operand) => encode_typebr(0x1022, operand), // Opcode for BHI
+        Instruction::LBHS(operand) => encode_typebr(0x1024, operand), // Opcode for BHS (same as BCC)
+        Instruction::LBLE(operand) => encode_typebr(0x102F, operand), // Opcode for BLE
+        Instruction::LBLO(operand) => encode_typebr(0x1025, operand), // Opcode for BLO
+        Instruction::LBLS(operand) => encode_typebr(0x1023, operand), // Opcode for BLS
+        Instruction::LBLT(operand) => encode_typebr(0x102D, operand), // Opcode for BLT
+        Instruction::LBMI(operand) => encode_typebr(0x102B, operand), // Opcode for BMI
+        Instruction::LBNE(operand) => encode_typebr(0x1026, operand), // Opcode for BNE
+        Instruction::LBPL(operand) => encode_typebr(0x102A, operand), // Opcode for BPL
+        Instruction::LBRA(operand) => encode_typebr(0x16, operand), // Opcode for BRA
+        Instruction::LBRN(operand) => encode_typebr(0x1021, operand), // Opcode for BRN
+        Instruction::LBSR(operand) => encode_typebr(0x17, operand), // Opcode for BSR
+        Instruction::LBVC(operand) => encode_typebr(0x1028, operand), // Opcode for BVC
+        Instruction::LBVS(operand) => encode_typebr(0x1029, operand), // Opcode for BVS
         Instruction::LDA(operand)  => encode_type1(0x86,   operand), // Base opcode for LDA
         Instruction::LDB(operand)  => encode_type1(0xC6,   operand), // Base opcode for LDB
         Instruction::LDD(operand) => encode_type1(0xCC,   operand), // Base opcode for LDD
