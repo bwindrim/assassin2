@@ -193,8 +193,16 @@ fn encode_typepspl(opcode: u8, operand: &Typepspl) -> Vec<u8> {
     vec![opcode, mask]
 }
 
-fn encode_typebr(_opcode: u16, _operand: &Typebr) -> Vec<u8> {
-    vec![]
+fn encode_typebr(opcode: u16, operand: &Typebr) -> Vec<u8> {
+    match operand {
+        Typebr::SHORT(offset) => vec![opcode as u8, *offset as u8],
+        Typebr::LONG(offset) => vec![opcode as u8, (*offset >> 8) as u8, *offset as u8],
+        Typebr::UNRESOLVED(label) => {
+            // Placeholder for unresolved label; in a real assembler, this would be resolved later
+            println!("Warning: Unresolved branch target '{}'", label);
+            vec![opcode as u8, 0x00, 0x00] // Placeholder offset
+        }
+    }
 }
 
 pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {

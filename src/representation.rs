@@ -161,7 +161,8 @@ impl From<IndexedIndirect> for Type2 {
 // which is a branch target label.
 #[derive(Debug)]
 pub enum Typebr {
-    RESOLVED(u16),
+    SHORT(i8),
+    LONG(i16),
     UNRESOLVED(String),
 }
 

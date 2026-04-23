@@ -1,6 +1,8 @@
+pub mod parsing;
 pub mod generation;
 pub mod representation;
 
+use parsing::*;
 use generation::*;
 use representation::*;
 
@@ -28,4 +30,6 @@ fn main() {
     println!("{:?} -> {:?}", instr, encode_instruction(&instr));
     seg.elements.push(Element::Inst(instr));
     println!("{:?}", seg);
+
+    let _ = parse("tst/boot.a");
 }
