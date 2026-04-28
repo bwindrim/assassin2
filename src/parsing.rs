@@ -1,3 +1,4 @@
+use core::panic;
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -48,8 +49,6 @@ pub fn parse(filename: &str) -> std::io::Result<()> {
 }
 
 fn tokenize(line: &str) -> Vec<Token> {
-    // This is a very simple tokenizer that splits the line into tokens based on whitespace and punctuation.
-    // It does not handle string literals, comments, or other complexities of a real assembler.
     let mut tokens = Vec::new();
     // If the line starts with whitespace then we push an Empty token to represent that.
     if let Some(c) = line.chars().next() {
@@ -62,6 +61,17 @@ fn tokenize(line: &str) -> Vec<Token> {
     while let Some(c) = chars.next() {
             if c.is_whitespace() {
                 continue;
+            }
+
+            if c == ';' {
+                // The rest of the line is a comment, so we push a Comment token and break.
+                let mut comment_string = String::new();
+                while let Some(next_c) = chars.peek() {
+                    comment_string.push(*next_c);
+                    chars.next(); // Consume the character
+                }
+                tokens.push(Token::Comment(comment_string));
+                break;
             }
 
             if c.is_alphabetic() || c == '_' {
@@ -90,17 +100,6 @@ fn tokenize(line: &str) -> Vec<Token> {
                     u16::from_str_radix(&decimal_string, 10).unwrap(),
                 ));
                 continue;
-            }
-
-            if c == ';' {
-                // The rest of the line is a comment, so we push a Comment token and break.
-                let mut comment_string = String::new();
-                while let Some(next_c) = chars.peek() {
-                    comment_string.push(*next_c);
-                    chars.next(); // Consume the character
-                }
-                tokens.push(Token::Comment(comment_string));
-                break;
             }
 
             if c == '$' {
@@ -132,6 +131,40 @@ fn tokenize(line: &str) -> Vec<Token> {
                 ));
                 continue;
             }
+
+            if c == '"' {
+                // string literal
+                let mut string_literal = String::new();
+                while let Some(next_c) = chars.peek() {
+                    if *next_c == '"' {
+                        chars.next(); // Consume the closing quote
+                        break;
+                    }
+                    string_literal.push(*next_c);
+                    chars.next(); // Consume the character
+                }
+                tokens.push(Token::String(string_literal));
+                continue;
+            }
+
+            if c == '\'' {
+                // character literal
+                if let Some(next_c) = chars.next() {
+                    tokens.push(Token::Unsigned(next_c as u16));
+                    // Consume the closing quote
+                    if let Some(quote_c) = chars.next() {
+                        if quote_c != '\'' {
+                            panic!("Expected closing quote for character literal");
+                        }
+                    } else {
+                        panic!("Expected closing quote for character literal");
+                    }
+                } else {
+                    panic!("Expected character literal after opening quote");
+                }
+                continue;
+            }
+
             match c {
                 ',' => tokens.push(Token::Comma),
                 ':' => tokens.push(Token::Colon),
@@ -149,7 +182,7 @@ fn tokenize(line: &str) -> Vec<Token> {
                 '!' => tokens.push(Token::Not),
                 '<' => tokens.push(Token::LessThan),
                 '>' => tokens.push(Token::GreaterThan),
-                _ => {}
+                _ => { panic!("Unexpected character: {}", c); }
             }
         }
     tokens
