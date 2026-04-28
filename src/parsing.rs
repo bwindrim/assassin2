@@ -59,8 +59,7 @@ fn tokenize(line: &str) -> Vec<Token> {
     }
     // We iterate through the characters of the line, building up tokens as we go.
     let mut chars = line.chars().peekable();
-    loop {
-        if let Some(c) = chars.next() {
+    while let Some(c) = chars.next() {
             if c.is_whitespace() {
                 continue;
             }
@@ -68,32 +67,32 @@ fn tokenize(line: &str) -> Vec<Token> {
             if c.is_alphabetic() || c == '_' {
                 let mut name_string = String::new();
                 name_string.push(c);
-                while let Some(next_c) = chars.peek() {
-                    if next_c.is_alphanumeric() || *next_c == '_' {
-                        name_string.push(*next_c);
-                        chars.next(); // Consume the character
-                    } else {
-                        // We need to process the next character, so we break out of the loop and continue processing it.
-                        break;
-                    }
+                while let Some(next_c) = chars.peek()
+                    && (next_c.is_alphanumeric() || *next_c == '_')
+                {
+                    name_string.push(*next_c);
+                    chars.next(); // Consume the character
                 }
                 tokens.push(Token::Name(name_string));
-            } else if c.is_ascii_digit() {
+                continue;
+            }
+
+            if c.is_ascii_digit() {
                 let mut decimal_string = String::new();
                 decimal_string.push(c);
-                while let Some(next_c) = chars.peek() {
-                    if next_c.is_ascii_digit() {
-                        decimal_string.push(*next_c);
-                        chars.next(); // Consume the character
-                    } else {
-                        // We need to process the next character, so we break out of the loop and continue processing it.
-                        break;
-                    }
+                while let Some(next_c) = chars.peek()
+                    && next_c.is_ascii_digit()
+                {
+                    decimal_string.push(*next_c);
+                    chars.next(); // Consume the character
                 }
                 tokens.push(Token::Unsigned(
                     u16::from_str_radix(&decimal_string, 10).unwrap(),
                 ));
-            } else if c == ';' {
+                continue;
+            }
+
+            if c == ';' {
                 // The rest of the line is a comment, so we push a Comment token and break.
                 let mut comment_string = String::new();
                 while let Some(next_c) = chars.peek() {
@@ -101,61 +100,58 @@ fn tokenize(line: &str) -> Vec<Token> {
                     chars.next(); // Consume the character
                 }
                 tokens.push(Token::Comment(comment_string));
-            } else if c == '$' {
+                break;
+            }
+
+            if c == '$' {
                 // hexadecimal literal
                 let mut hex_string = String::new();
-                while let Some(next_c) = chars.peek() {
-                    if next_c.is_ascii_hexdigit() {
-                        hex_string.push(*next_c);
-                        chars.next(); // Consume the character
-                    } else {
-                        // We need to process the next character, so we break out of the loop and continue processing it.
-                        break;
-                    }
+                while let Some(next_c) = chars.peek()
+                    && next_c.is_ascii_hexdigit()
+                {
+                    hex_string.push(*next_c);
+                    chars.next(); // Consume the character
                 }
                 tokens.push(Token::Unsigned(
                     u16::from_str_radix(&hex_string, 16).unwrap(),
                 ));
-            } else if c == '%' {
+                continue;
+            }
+
+            if c == '%' {
                 // binary literal
                 let mut bin_string = String::new();
-                while let Some(next_c) = chars.peek() {
-                    if *next_c == '0' || *next_c == '1' {
-                        bin_string.push(*next_c);
-                        chars.next(); // Consume the character
-                    } else {
-                        // We need to process the next character, so we break out of the loop and continue processing it.
-                        break;
-                    }
+                while let Some(next_c) = chars.peek()
+                    && (*next_c == '0' || *next_c == '1')
+                {
+                    bin_string.push(*next_c);
+                    chars.next(); // Consume the character
                 }
                 tokens.push(Token::Unsigned(
                     u16::from_str_radix(&bin_string, 2).unwrap(),
                 ));
-            } else {
-                match c {
-                    ',' => tokens.push(Token::Comma),
-                    ':' => tokens.push(Token::Colon),
-                    '#' => tokens.push(Token::Hash),
-                    '(' => tokens.push(Token::OpenParen),
-                    ')' => tokens.push(Token::CloseParen),
-                    '+' => tokens.push(Token::Plus),
-                    '-' => tokens.push(Token::Minus),
-                    '*' => tokens.push(Token::Mul),
-                    '/' => tokens.push(Token::Div),
-                    '%' => tokens.push(Token::Mod),
-                    '&' => tokens.push(Token::And),
-                    '|' => tokens.push(Token::Or),
-                    '^' => tokens.push(Token::Xor),
-                    '!' => tokens.push(Token::Not),
-                    '<' => tokens.push(Token::LessThan),
-                    '>' => tokens.push(Token::GreaterThan),
-                    _ => {}
-                }
+                continue;
             }
-        } else {
-            break;
+            match c {
+                ',' => tokens.push(Token::Comma),
+                ':' => tokens.push(Token::Colon),
+                '#' => tokens.push(Token::Hash),
+                '(' => tokens.push(Token::OpenParen),
+                ')' => tokens.push(Token::CloseParen),
+                '+' => tokens.push(Token::Plus),
+                '-' => tokens.push(Token::Minus),
+                '*' => tokens.push(Token::Mul),
+                '/' => tokens.push(Token::Div),
+                '%' => tokens.push(Token::Mod),
+                '&' => tokens.push(Token::And),
+                '|' => tokens.push(Token::Or),
+                '^' => tokens.push(Token::Xor),
+                '!' => tokens.push(Token::Not),
+                '<' => tokens.push(Token::LessThan),
+                '>' => tokens.push(Token::GreaterThan),
+                _ => {}
+            }
         }
-    }
     tokens
 }
 
