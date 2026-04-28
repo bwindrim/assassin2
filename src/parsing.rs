@@ -50,104 +50,100 @@ pub fn parse(filename: &str) -> std::io::Result<()> {
 
 fn tokenize(line: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
-    // If the line starts with whitespace then we push an Empty token to represent that.
-    if let Some(c) = line.chars().next() {
-        if c.is_whitespace() {
-            tokens.push(Token::Empty);
-        }
-    }
+
     // We iterate through the characters of the line, building up tokens as we go.
     let mut chars = line.chars().peekable();
     while let Some(c) = chars.next() {
-            if c.is_whitespace() {
-                continue;
+        match c {
+            ' ' | '\t' => {
+                // If the line starts with whitespace then we push an Empty token to represent that.
+                // (Note the two different meanings of "empty" here.)
+                // Otherwise we ignore whitespace.
+                if tokens.is_empty() {
+                    tokens.push(Token::Empty);
+                }
             }
 
-            if c == ';' {
+            ';' => {
                 // The rest of the line is a comment, so we push a Comment token and break.
                 let mut comment_string = String::new();
                 while let Some(next_c) = chars.peek() {
                     comment_string.push(*next_c);
-                    chars.next(); // Consume the character
+                    chars.next(); // consume the character
                 }
                 tokens.push(Token::Comment(comment_string));
                 break;
             }
 
-            if c.is_alphabetic() || c == '_' {
+            'a'..='z' | 'A'..='Z' | '_' => {
                 let mut name_string = String::new();
                 name_string.push(c);
                 while let Some(next_c) = chars.peek()
                     && (next_c.is_alphanumeric() || *next_c == '_')
                 {
                     name_string.push(*next_c);
-                    chars.next(); // Consume the character
+                    chars.next(); // consume the character
                 }
                 tokens.push(Token::Name(name_string));
-                continue;
             }
 
-            if c.is_ascii_digit() {
+            '0'..='9' => {
                 let mut decimal_string = String::new();
                 decimal_string.push(c);
                 while let Some(next_c) = chars.peek()
                     && next_c.is_ascii_digit()
                 {
                     decimal_string.push(*next_c);
-                    chars.next(); // Consume the character
+                    chars.next(); // consume the character
                 }
                 tokens.push(Token::Unsigned(
                     u16::from_str_radix(&decimal_string, 10).unwrap(),
                 ));
-                continue;
             }
 
-            if c == '$' {
+            '$' => {
                 // hexadecimal literal
                 let mut hex_string = String::new();
                 while let Some(next_c) = chars.peek()
                     && next_c.is_ascii_hexdigit()
                 {
                     hex_string.push(*next_c);
-                    chars.next(); // Consume the character
+                    chars.next(); // consume the character
                 }
                 tokens.push(Token::Unsigned(
                     u16::from_str_radix(&hex_string, 16).unwrap(),
                 ));
-                continue;
             }
 
-            if c == '%' {
+            '%' => {
                 // binary literal
                 let mut bin_string = String::new();
                 while let Some(next_c) = chars.peek()
                     && (*next_c == '0' || *next_c == '1')
                 {
                     bin_string.push(*next_c);
-                    chars.next(); // Consume the character
+                    chars.next(); // consume the character
                 }
                 tokens.push(Token::Unsigned(
                     u16::from_str_radix(&bin_string, 2).unwrap(),
                 ));
-                continue;
             }
 
-            if c == '"' {
+            '"' => {
                 // string literal
                 let mut string_literal = String::new();
                 while let Some(next_c) = chars.peek() {
                     if *next_c == '"' {
-                        chars.next(); // Consume the closing quote
+                        chars.next(); // consume the closing quote
                         break;
                     }
                     string_literal.push(*next_c);
-                    chars.next(); // Consume the character
+                    chars.next(); // consume the character
                 }
                 tokens.push(Token::String(string_literal));
-                continue;
             }
 
-            if c == '\'' {
+            '\'' => {
                 // character literal
                 if let Some(next_c) = chars.next() {
                     tokens.push(Token::Unsigned(next_c as u16));
@@ -162,29 +158,29 @@ fn tokenize(line: &str) -> Vec<Token> {
                 } else {
                     panic!("Expected character literal after opening quote");
                 }
-                continue;
             }
 
-            match c {
-                ',' => tokens.push(Token::Comma),
-                ':' => tokens.push(Token::Colon),
-                '#' => tokens.push(Token::Hash),
-                '(' => tokens.push(Token::OpenParen),
-                ')' => tokens.push(Token::CloseParen),
-                '+' => tokens.push(Token::Plus),
-                '-' => tokens.push(Token::Minus),
-                '*' => tokens.push(Token::Mul),
-                '/' => tokens.push(Token::Div),
-                '%' => tokens.push(Token::Mod),
-                '&' => tokens.push(Token::And),
-                '|' => tokens.push(Token::Or),
-                '^' => tokens.push(Token::Xor),
-                '!' => tokens.push(Token::Not),
-                '<' => tokens.push(Token::LessThan),
-                '>' => tokens.push(Token::GreaterThan),
-                _ => { panic!("Unexpected character: {}", c); }
+            ',' => tokens.push(Token::Comma),
+            ':' => tokens.push(Token::Colon),
+            '#' => tokens.push(Token::Hash),
+            '(' => tokens.push(Token::OpenParen),
+            ')' => tokens.push(Token::CloseParen),
+            '+' => tokens.push(Token::Plus),
+            '-' => tokens.push(Token::Minus),
+            '*' => tokens.push(Token::Mul),
+            '/' => tokens.push(Token::Div),
+            '%' => tokens.push(Token::Mod),
+            '&' => tokens.push(Token::And),
+            '|' => tokens.push(Token::Or),
+            '^' => tokens.push(Token::Xor),
+            '!' => tokens.push(Token::Not),
+            '<' => tokens.push(Token::LessThan),
+            '>' => tokens.push(Token::GreaterThan),
+            _ => {
+                panic!("Unexpected character: {}", c);
             }
         }
+    }
     tokens
 }
 
