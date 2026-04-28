@@ -13,6 +13,7 @@ enum Token {
     Signed(i16),
     Unsigned(u16),
     String(String),
+    Colon,
     Comma,
     Hash,
     OpenParen,
@@ -50,49 +51,110 @@ fn tokenize(line: &str) -> Vec<Token> {
     // This is a very simple tokenizer that splits the line into tokens based on whitespace and punctuation.
     // It does not handle string literals, comments, or other complexities of a real assembler.
     let mut tokens = Vec::new();
-    let mut current_token = String::new();
-    let first_char = line.chars().next();
-    if let Some(c) = first_char {
+    // If the line starts with whitespace then we push an Empty token to represent that.
+    if let Some(c) = line.chars().next() {
         if c.is_whitespace() {
             tokens.push(Token::Empty);
         }
     }
-    for c in line.chars() {
-        if c.is_whitespace() {
-            if !current_token.is_empty() {
-                tokens.push(Token::Name(current_token));
-                current_token = String::new();
+    // We iterate through the characters of the line, building up tokens as we go.
+    let mut chars = line.chars().peekable();
+    loop {
+        if let Some(c) = chars.next() {
+            if c.is_whitespace() {
+                continue;
             }
-        } else if c.is_alphanumeric() || c == '_' {
-            current_token.push(c);
+
+            if c.is_alphabetic() || c == '_' {
+                let mut name_string = String::new();
+                name_string.push(c);
+                while let Some(next_c) = chars.peek() {
+                    if next_c.is_alphanumeric() || *next_c == '_' {
+                        name_string.push(*next_c);
+                        chars.next(); // Consume the character
+                    } else {
+                        // We need to process the next character, so we break out of the loop and continue processing it.
+                        break;
+                    }
+                }
+                tokens.push(Token::Name(name_string));
+            } else if c.is_ascii_digit() {
+                let mut decimal_string = String::new();
+                decimal_string.push(c);
+                while let Some(next_c) = chars.peek() {
+                    if next_c.is_ascii_digit() {
+                        decimal_string.push(*next_c);
+                        chars.next(); // Consume the character
+                    } else {
+                        // We need to process the next character, so we break out of the loop and continue processing it.
+                        break;
+                    }
+                }
+                tokens.push(Token::Unsigned(
+                    u16::from_str_radix(&decimal_string, 10).unwrap(),
+                ));
+            } else if c == ';' {
+                // The rest of the line is a comment, so we push a Comment token and break.
+                let mut comment_string = String::new();
+                while let Some(next_c) = chars.peek() {
+                    comment_string.push(*next_c);
+                    chars.next(); // Consume the character
+                }
+                tokens.push(Token::Comment(comment_string));
+            } else if c == '$' {
+                // hexadecimal literal
+                let mut hex_string = String::new();
+                while let Some(next_c) = chars.peek() {
+                    if next_c.is_ascii_hexdigit() {
+                        hex_string.push(*next_c);
+                        chars.next(); // Consume the character
+                    } else {
+                        // We need to process the next character, so we break out of the loop and continue processing it.
+                        break;
+                    }
+                }
+                tokens.push(Token::Unsigned(
+                    u16::from_str_radix(&hex_string, 16).unwrap(),
+                ));
+            } else if c == '%' {
+                // binary literal
+                let mut bin_string = String::new();
+                while let Some(next_c) = chars.peek() {
+                    if *next_c == '0' || *next_c == '1' {
+                        bin_string.push(*next_c);
+                        chars.next(); // Consume the character
+                    } else {
+                        // We need to process the next character, so we break out of the loop and continue processing it.
+                        break;
+                    }
+                }
+                tokens.push(Token::Unsigned(
+                    u16::from_str_radix(&bin_string, 2).unwrap(),
+                ));
+            } else {
+                match c {
+                    ',' => tokens.push(Token::Comma),
+                    ':' => tokens.push(Token::Colon),
+                    '#' => tokens.push(Token::Hash),
+                    '(' => tokens.push(Token::OpenParen),
+                    ')' => tokens.push(Token::CloseParen),
+                    '+' => tokens.push(Token::Plus),
+                    '-' => tokens.push(Token::Minus),
+                    '*' => tokens.push(Token::Mul),
+                    '/' => tokens.push(Token::Div),
+                    '%' => tokens.push(Token::Mod),
+                    '&' => tokens.push(Token::And),
+                    '|' => tokens.push(Token::Or),
+                    '^' => tokens.push(Token::Xor),
+                    '!' => tokens.push(Token::Not),
+                    '<' => tokens.push(Token::LessThan),
+                    '>' => tokens.push(Token::GreaterThan),
+                    _ => {}
+                }
+            }
         } else {
-            if !current_token.is_empty() {
-                tokens.push(Token::Name(current_token));
-                current_token = String::new();
-            }
-            match c {
-                ',' => tokens.push(Token::Comma),
-                '#' => tokens.push(Token::Hash),
-                '(' => tokens.push(Token::OpenParen),
-                ')' => tokens.push(Token::CloseParen),
-                '+' => tokens.push(Token::Plus),
-                '-' => tokens.push(Token::Minus),
-                '*' => tokens.push(Token::Mul),
-                '/' => tokens.push(Token::Div),
-                '%' => tokens.push(Token::Mod),
-                '&' => tokens.push(Token::And),
-                '|' => tokens.push(Token::Or),
-                '^' => tokens.push(Token::Xor),
-                '!' => tokens.push(Token::Not),
-                '<' => tokens.push(Token::LessThan),
-                '>' => tokens.push(Token::GreaterThan),
-                ';' => break, // Comment starts, ignore the rest of the line
-                _ => {}
-            }
+            break;
         }
-    }
-    if !current_token.is_empty() {
-        tokens.push(Token::Name(current_token));
     }
     tokens
 }
