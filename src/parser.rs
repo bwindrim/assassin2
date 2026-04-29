@@ -29,21 +29,6 @@ enum Token {
     Comment(String),
 }
 
-pub fn parse(filename: &str) -> std::io::Result<()> {
-    let path = env::current_dir()?;
-    println!("The current directory is {}", path.display());
-
-    // File <filename> must exist in the current path
-    if let Ok(lines) = read_lines(filename) {
-        // Consumes the iterator, returns an (Optional) String
-        for line in lines.map_while(Result::ok) {
-            println!("{}", line);
-            parse_line(&line);
-        }
-    }
-    Ok(())
-}
-
 fn tokenize(line: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
 
@@ -52,9 +37,9 @@ fn tokenize(line: &str) -> Vec<Token> {
     while let Some(c) = chars.next() {
         match c {
             ' ' | '\t' => {
-                // If the line starts with whitespace then we push an Empty token to represent that.
-                // (Note the two different meanings of "empty" here.)
-                // Otherwise we ignore whitespace.
+                // If the line starts with whitespace then we push an Empty token to represent that,
+                // otherwise we ignore whitespace.
+                // (Note the two different meanings of "empty" here: empty token array vs Empty token.)
                 if tokens.is_empty() {
                     tokens.push(Token::Empty);
                 }
@@ -98,7 +83,7 @@ fn tokenize(line: &str) -> Vec<Token> {
             }
 
             '$' => {
-                // hexadecimal literal
+                // Hexadecimal literal.
                 let mut hex_string = String::new();
                 while let Some(next_c) = chars.peek()
                     && next_c.is_ascii_hexdigit()
@@ -112,7 +97,7 @@ fn tokenize(line: &str) -> Vec<Token> {
             }
 
             '@' => {
-                // binary literal
+                // Binary literal.
                 let mut bin_string = String::new();
                 while let Some(next_c) = chars.peek()
                     && (*next_c == '0' || *next_c == '1')
@@ -126,7 +111,7 @@ fn tokenize(line: &str) -> Vec<Token> {
             }
 
             '"' => {
-                // string literal
+                // String literal.
                 let mut string_literal = String::new();
                 while let Some(next_c) = chars.peek() {
                     if *next_c == '"' {
@@ -140,7 +125,7 @@ fn tokenize(line: &str) -> Vec<Token> {
             }
 
             '\'' => {
-                // character literal
+                // Character literal.
                 if let Some(next_c) = chars.next() {
                     tokens.push(Token::Unsigned(next_c as u16));
                     // Consume the closing quote
@@ -180,11 +165,6 @@ fn tokenize(line: &str) -> Vec<Token> {
     tokens
 }
 
-fn parse_line(line: &str) {
-    let tokens = tokenize(line);
-    println!("{:?}", tokens);
-}
-
 // The output is wrapped in a Result to allow matching on errors.
 // Returns an Iterator to the Reader of the lines of the file.
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -199,4 +179,23 @@ where
             Err(e)
         }
     }
+}
+
+pub fn parse(filename: &str) -> std::io::Result<()> {
+    let path = env::current_dir()?;
+    println!("The current directory is {}", path.display());
+
+    // File <filename> must exist in the current path
+    if let Ok(lines) = read_lines(filename) {
+        // Consumes the iterator, returns an (Optional) String
+        for line in lines.map_while(Result::ok) {
+            println!("{}", line);
+            {
+                let line: &str = &line;
+                let tokens = tokenize(line);
+                println!("{:?}", tokens);
+            };
+        }
+    }
+    Ok(())
 }
