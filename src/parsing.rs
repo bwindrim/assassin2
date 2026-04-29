@@ -7,11 +7,7 @@ use std::path::Path;
 #[derive(Debug)]
 enum Token {
     Empty,
-    Label(String),
     Name(String),
-    Instruction(String),
-    Directive(String),
-    Signed(i16),
     Unsigned(u16),
     String(String),
     Colon,
@@ -115,7 +111,7 @@ fn tokenize(line: &str) -> Vec<Token> {
                 ));
             }
 
-            '%' => {
+            '@' => {
                 // binary literal
                 let mut bin_string = String::new();
                 while let Some(next_c) = chars.peek()
