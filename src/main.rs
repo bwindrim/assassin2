@@ -1,9 +1,9 @@
-pub mod parsing;
-pub mod generation;
+pub mod parser;
+pub mod generator;
 pub mod representation;
 
-use parsing::*;
-use generation::*;
+use parser::*;
+use generator::*;
 use representation::*;
 
 fn main() {
