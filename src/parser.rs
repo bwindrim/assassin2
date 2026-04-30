@@ -78,7 +78,7 @@ fn tokenize(line: &str) -> Vec<Token> {
                 let mut decimal_string = String::new();
                 decimal_string.push(c);
                 while let Some(next_c) = chars.peek()
-                    && next_c.is_ascii_digit()
+                    && (next_c.is_alphanumeric() || *next_c == '_')
                 {
                     decimal_string.push(*next_c);
                     chars.next(); // consume the character
@@ -94,7 +94,7 @@ fn tokenize(line: &str) -> Vec<Token> {
                 // Hexadecimal literal.
                 let mut hex_string = String::new();
                 while let Some(next_c) = chars.peek()
-                    && next_c.is_ascii_hexdigit()
+                    && (next_c.is_alphanumeric() || *next_c == '_')
                 {
                     hex_string.push(*next_c);
                     chars.next(); // consume the character
@@ -110,7 +110,7 @@ fn tokenize(line: &str) -> Vec<Token> {
                 // Binary literal.
                 let mut bin_string = String::new();
                 while let Some(next_c) = chars.peek()
-                    && (*next_c == '0' || *next_c == '1')
+                    && (next_c.is_alphanumeric() || *next_c == '_')
                 {
                     bin_string.push(*next_c);
                     chars.next(); // consume the character
