@@ -35,7 +35,9 @@ enum TokenizerError {
     UnterminatedString,
     UnterminatedChar,
     UnexpectedEndOfFile,
-    CannotParseNumber(String),
+    InvalidDec(String),
+    InvalidHex(String),
+    InvalidBin(String),
 }
 
 fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
@@ -88,7 +90,7 @@ fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
                 }
                 match u16::from_str_radix(&decimal_string, 10) {
                     Ok(value) => tokens.push(Token::Unsigned(value)),
-                    Err(e) => return Err(TokenizerError::CannotParseNumber(e.to_string())),
+                    Err(e) => return Err(TokenizerError::InvalidDec(e.to_string())),
                 };
             }
 
@@ -103,7 +105,7 @@ fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
                 }
                 match u16::from_str_radix(&hex_string, 16) {
                     Ok(value) => tokens.push(Token::Unsigned(value)),
-                    Err(e) => return Err(TokenizerError::CannotParseNumber(e.to_string())),
+                    Err(e) => return Err(TokenizerError::InvalidHex(e.to_string())),
                 };
             }
 
@@ -118,12 +120,13 @@ fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
                 }
                 match u16::from_str_radix(&bin_string, 2) {
                     Ok(value) => tokens.push(Token::Unsigned(value)),
-                    Err(e) => return Err(TokenizerError::CannotParseNumber(e.to_string())),
+                    Err(e) => return Err(TokenizerError::InvalidBin(e.to_string())),
                 };
             }
 
             '"' => {
                 // String literal.
+                // ToDo: handle missing closing quote
                 let mut string_literal = String::new();
                 while let Some(next_c) = chars.peek() {
                     if *next_c == '"' {
