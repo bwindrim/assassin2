@@ -29,6 +29,12 @@ enum Token {
     Comment(String),
 }
 
+enum TokenizerError {
+    UnexpectedCharacter(char),
+    UnterminatedString,
+    UnterminatedChar,
+}
+
 fn tokenize(line: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
 
@@ -77,9 +83,11 @@ fn tokenize(line: &str) -> Vec<Token> {
                     decimal_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                tokens.push(Token::Unsigned(
-                    u16::from_str_radix(&decimal_string, 10).unwrap(),
-                ));
+                let value = match u16::from_str_radix(&decimal_string, 10) {
+                    Ok(v) => v,
+                    Err(e) => panic!("Error parsing decimal literal: {}", e),
+                };
+                tokens.push(Token::Unsigned(value));
             }
 
             '$' => {
@@ -91,9 +99,11 @@ fn tokenize(line: &str) -> Vec<Token> {
                     hex_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                tokens.push(Token::Unsigned(
-                    u16::from_str_radix(&hex_string, 16).unwrap(),
-                ));
+                let value = match u16::from_str_radix(&hex_string, 16) {
+                    Ok(v) => v,
+                    Err(e) => panic!("Error parsing hexadecimal literal: {}", e),
+                };
+                tokens.push(Token::Unsigned(value));
             }
 
             '@' => {
@@ -105,9 +115,11 @@ fn tokenize(line: &str) -> Vec<Token> {
                     bin_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                tokens.push(Token::Unsigned(
-                    u16::from_str_radix(&bin_string, 2).unwrap(),
-                ));
+                let value = match u16::from_str_radix(&bin_string, 2) {
+                    Ok(v) => v,
+                    Err(e) => panic!("Error parsing binary literal: {}", e),
+                };
+                tokens.push(Token::Unsigned(value));
             }
 
             '"' => {
