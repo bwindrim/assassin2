@@ -29,13 +29,16 @@ enum Token {
     Comment(String),
 }
 
+#[derive(Debug)]
 enum TokenizerError {
     UnexpectedCharacter(char),
     UnterminatedString,
     UnterminatedChar,
+    UnexpectedEndOfFile,
+    CannotParseNumber(String),
 }
 
-fn tokenize(line: &str) -> Vec<Token> {
+fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
     let mut tokens = Vec::new();
 
     // We iterate through the characters of the line, building up tokens as we go.
@@ -83,11 +86,10 @@ fn tokenize(line: &str) -> Vec<Token> {
                     decimal_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                let value = match u16::from_str_radix(&decimal_string, 10) {
-                    Ok(v) => v,
-                    Err(e) => panic!("Error parsing decimal literal: {}", e),
+                match u16::from_str_radix(&decimal_string, 10) {
+                    Ok(value) => tokens.push(Token::Unsigned(value)),
+                    Err(e) => return Err(TokenizerError::CannotParseNumber(e.to_string())),
                 };
-                tokens.push(Token::Unsigned(value));
             }
 
             '$' => {
@@ -99,11 +101,10 @@ fn tokenize(line: &str) -> Vec<Token> {
                     hex_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                let value = match u16::from_str_radix(&hex_string, 16) {
-                    Ok(v) => v,
-                    Err(e) => panic!("Error parsing hexadecimal literal: {}", e),
+                match u16::from_str_radix(&hex_string, 16) {
+                    Ok(value) => tokens.push(Token::Unsigned(value)),
+                    Err(e) => return Err(TokenizerError::CannotParseNumber(e.to_string())),
                 };
-                tokens.push(Token::Unsigned(value));
             }
 
             '@' => {
@@ -115,11 +116,10 @@ fn tokenize(line: &str) -> Vec<Token> {
                     bin_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                let value = match u16::from_str_radix(&bin_string, 2) {
-                    Ok(v) => v,
-                    Err(e) => panic!("Error parsing binary literal: {}", e),
+                match u16::from_str_radix(&bin_string, 2) {
+                    Ok(value) => tokens.push(Token::Unsigned(value)),
+                    Err(e) => return Err(TokenizerError::CannotParseNumber(e.to_string())),
                 };
-                tokens.push(Token::Unsigned(value));
             }
 
             '"' => {
@@ -138,18 +138,19 @@ fn tokenize(line: &str) -> Vec<Token> {
 
             '\'' => {
                 // Character literal.
+                // ToDo: add handling of special chars, and rejection of tabs
                 if let Some(next_c) = chars.next() {
                     tokens.push(Token::Unsigned(next_c as u16));
                     // Consume the closing quote
                     if let Some(quote_c) = chars.next() {
                         if quote_c != '\'' {
-                            panic!("Expected closing quote for character literal");
+                            return Err(TokenizerError::UnterminatedChar);
                         }
                     } else {
-                        panic!("Expected closing quote for character literal");
+                        return Err(TokenizerError::UnterminatedChar);
                     }
                 } else {
-                    panic!("Expected character literal after opening quote");
+                    return Err(TokenizerError::UnexpectedEndOfFile);
                 }
             }
 
@@ -169,12 +170,10 @@ fn tokenize(line: &str) -> Vec<Token> {
             '!' => tokens.push(Token::Not),
             '<' => tokens.push(Token::LessThan),
             '>' => tokens.push(Token::GreaterThan),
-            _ => {
-                panic!("Unexpected character: {}", c);
-            }
+            _ => return Err(TokenizerError::UnexpectedCharacter(c)),
         }
     }
-    tokens
+    Ok(tokens)
 }
 
 // The output is wrapped in a Result to allow matching on errors.
@@ -204,8 +203,11 @@ pub fn parse(filename: &str) -> std::io::Result<()> {
             println!("{}", line);
             {
                 let line: &str = &line;
-                let tokens = tokenize(line);
-                println!("{:?}", tokens);
+                let result = tokenize(line);
+                match result {
+                    Ok(tokens) => println!("{:?}", tokens),
+                    Err(e) => println!("Tokenizer error: {:?}", e),
+                }
             };
         }
     }
