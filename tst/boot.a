@@ -1,4 +1,5 @@
 		org	$F000
+
 		ldx	#$E00
 loop1:		lda	$EFFF,x
 		sta	$EFFF,x
@@ -39,7 +40,9 @@ loop4:		leay	-1,y
 exit:		ldu	#getword
 		exg	u,pc
 		exg	d,pc
+
 int:		rti
+
 getword:	lda	<$0D	; load A from IFR
 		anda	#2		; test CA1 flag
 		sbeq	getword		; loop if CA1 not set

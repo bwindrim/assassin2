@@ -37,6 +37,7 @@ fn main() {
     println!("{:?}", seg);
 
     let _ = parse("tst/boot.a");
+    println!("Done");
 }
 
 // The output is wrapped in a Result to allow matching on errors.
