@@ -17,9 +17,9 @@ fn main() {
         elements: vec![
             Element::Inst(Instruction::ABX),
             Element::Inst(Instruction::ADDA(Type1::IMM(42))),
-            Element::Data(Data::DB(vec![1, 2, 3])),
-            Element::Data(Data::DW(vec![0x1234, 0x5678])),
-            Element::Data(Data::DS(16)),
+            Element::Data(Directive::DB(vec![1, 2, 3])),
+            Element::Data(Directive::DW(vec![0x1234, 0x5678])),
+            Element::Data(Directive::DS(16)),
         ],
     };
     let instr = Instruction::ADDA(Type1::IMM(42));
@@ -71,8 +71,8 @@ fn parse(filename: &str) -> std::io::Result<()> {
                 match result {
                     Ok(tokens) => {
                         println!("{:?}", tokens);
-                        let recognition_result = recogniser::recognise(&tokens);
-                        match recognition_result {
+                        let element = recogniser::recognise(&tokens);
+                        match element {
                             Ok(Some(element)) => println!("Recognised element: {:?}", element),
                             Ok(None) => println!("No element recognised"),
                             Err(e) => println!("Recognition error: {}", e),

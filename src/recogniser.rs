@@ -1,5 +1,5 @@
 use crate::parser::Token;
-use crate::representation::{Data, Element, Instruction, Segment};
+use crate::representation::{Directive, Element, Instruction, Segment};
 
 pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     // This function will take a slice of tokens and attempt to recognise them as instructions or data.

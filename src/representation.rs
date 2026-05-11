@@ -380,7 +380,8 @@ pub enum Instruction {
 }
 
 #[derive(Debug)]
-pub enum Data {
+pub enum Directive {
+    ORG(u16),
     DB(Vec<u8>),
     DW(Vec<u16>),
     DS(usize),
@@ -388,7 +389,7 @@ pub enum Data {
 #[derive(Debug)]
 pub enum Element {
     Inst(Instruction),
-    Data(Data),
+    Data(Directive),
 }
 #[derive(Debug)]
 pub struct Segment {
