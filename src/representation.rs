@@ -382,9 +382,10 @@ pub enum Instruction {
 #[derive(Debug)]
 pub enum Directive {
     ORG(u16),
+    EXEC(u16),
     DB(Vec<u8>),
     DW(Vec<u16>),
-    DS(usize),
+    DS(u16),
 }
 #[derive(Debug)]
 pub enum Element {

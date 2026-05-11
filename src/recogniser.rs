@@ -12,14 +12,14 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     // If there is a name at the start of the line then we hold onto it as a potential
     // label, but if there is an empty token instead then we proceed with no label.
     let label = match first_token {
-        None => return Ok(None),
-        Some(Token::Empty) => None,
-        Some(Token::Comment(_)) => return Ok(None),
-        Some(Token::Name(name)) => Some(name),
+        None => return Ok(None), // empty line
+        Some(Token::Empty) => None, // no label
+        Some(Token::Comment(_)) => return Ok(None), // comment-only line
+        Some(Token::Name(name)) => Some(name), // save the label
         _ => return Err("Unexpected token".to_string()),
     };
 
-    // Check for a lable, which will comprise an already-seen label followed by a colon.
+    // Check for a label, which will comprise an already-seen label followed by a colon.
     let mut next_token = iter.next();
     match next_token {
         None => return Err("Unexpected end of line".to_string()),
@@ -40,17 +40,28 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
         None => return Ok(None),
         Some(Token::Name(mnemonic)) => match mnemonic.to_uppercase().as_str() {
             "ORG" => {
-                let operand_token = iter.next().ok_or("Expected operand after ORG")?;
-                match operand_token {
-                    Token::Unsigned(value) => Element::Directive(Directive::ORG(*value)),
+                match iter.next() {
+                    None => return Err("Expected operand after ORG".to_string()),
+                    Some(Token::Unsigned(value)) => Element::Directive(Directive::ORG(*value)),
                     _ => return Err("Expected unsigned value after ORG".to_string()),
+                }
+            }
+            "EXEC" => {
+                match iter.next() {
+                    None => return Err("Expected operand after EXEC".to_string()),
+                    Some(Token::Unsigned(value)) => Element::Directive(Directive::EXEC(*value)),
+                    _ => return Err("Expected unsigned value after EXEC".to_string()),
                 }
             }
             "DB" => {
                 let mut values = Vec::new();
                 for token in iter {
                     match token {
+                        // ToDo: make this stricter wrt. values and commas?
                         Token::Unsigned(value) => values.push(*value as u8),
+                        Token::String(string) => values.extend(string.bytes()),
+                        Token::Comma => continue, // allow commas between values
+                        Token::Comment(_) => break,
                         _ => return Err("Expected unsigned value after DB".to_string()),
                     }
                 }
@@ -60,7 +71,10 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
                 let mut values = Vec::new();
                 for token in iter {
                     match token {
+                        // ToDo: make this stricter wrt. values and commas?
                         Token::Unsigned(value) => values.push(*value),
+                        Token::Comma => continue, // allow commas between values
+                        Token::Comment(_) => break,
                         _ => return Err("Expected unsigned value after DW".to_string()),
                     }
                 }
@@ -69,7 +83,7 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "DS" => {
                 let operand_token = iter.next().ok_or("Expected operand after DS")?;
                 match operand_token {
-                    Token::Unsigned(value) => Element::Directive(Directive::DS(*value as usize)),
+                    Token::Unsigned(value) => Element::Directive(Directive::DS(*value)),
                     _ => return Err("Expected unsigned value after DS".to_string()),
                 }
             }
