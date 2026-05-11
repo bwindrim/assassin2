@@ -39,6 +39,40 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     let element = match next_token {
         None => return Ok(None),
         Some(Token::Name(mnemonic)) => match mnemonic.to_uppercase().as_str() {
+            "ORG" => {
+                let operand_token = iter.next().ok_or("Expected operand after ORG")?;
+                match operand_token {
+                    Token::Unsigned(value) => Element::Data(Directive::ORG(*value)),
+                    _ => return Err("Expected unsigned value after ORG".to_string()),
+                }
+            }
+            "DB" => {
+                let mut values = Vec::new();
+                for token in iter {
+                    match token {
+                        Token::Unsigned(value) => values.push(*value as u8),
+                        _ => return Err("Expected unsigned value after DB".to_string()),
+                    }
+                }
+                Element::Data(Directive::DB(values))
+            }
+            "DW" => {
+                let mut values = Vec::new();
+                for token in iter {
+                    match token {
+                        Token::Unsigned(value) => values.push(*value),
+                        _ => return Err("Expected unsigned value after DW".to_string()),
+                    }
+                }
+                Element::Data(Directive::DW(values))
+            }
+            "DS" => {
+                let operand_token = iter.next().ok_or("Expected operand after DS")?;
+                match operand_token {
+                    Token::Unsigned(value) => Element::Data(Directive::DS(*value as usize)),
+                    _ => return Err("Expected unsigned value after DS".to_string()),
+                }
+            }
             "ABX" => Element::Inst(Instruction::ABX),
             "ASLA" => Element::Inst(Instruction::ASLA),
             "ASLB" => Element::Inst(Instruction::ASLB),
