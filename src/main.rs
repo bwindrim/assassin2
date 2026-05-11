@@ -71,10 +71,9 @@ fn parse(filename: &str) -> std::io::Result<()> {
                 match result {
                     Ok(tokens) => {
                         println!("{:?}", tokens);
-                        let element = recogniser::recognise(&tokens);
-                        match element {
-                            Ok(Some(element)) => println!("Recognised element: {:?}", element),
-                            Ok(None) => println!("No element recognised"),
+                        let line = recogniser::recognise_line(&tokens);
+                        match line {
+                            Ok(line) => println!("Recognised line: {:?}", line) ,
                             Err(e) => println!("Recognition error: {}", e),
                         }
                     },

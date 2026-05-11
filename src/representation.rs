@@ -381,6 +381,7 @@ pub enum Instruction {
 
 #[derive(Debug)]
 pub enum Directive {
+    BLANK,
     ORG(u16),
     EXEC(u16),
     EQU(u16),
@@ -393,6 +394,13 @@ pub enum Element {
     Instruction(Instruction),
     Directive(Directive),
 }
+
+#[derive(Debug)]
+pub struct Line {
+    pub element: Element,
+    pub comment: Option<String>,
+}
+
 #[derive(Debug)]
 pub struct Segment {
     pub name: String,

@@ -1,4 +1,4 @@
-		org	$F000
+		org	$F000	; set the origin
 
 		ldx	#$E00
 loop1:		lda	$EFFF,x
@@ -40,7 +40,7 @@ loop4:		leay	-1,y
 exit:		ldu	#getword
 		exg	u,pc
 		exg	d,pc
-
+; Interrupt service routine, just returns.
 int:		rti
 
 getword:	lda	<$0D	; load A from IFR

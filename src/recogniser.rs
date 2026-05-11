@@ -1,9 +1,10 @@
 use crate::parser::Token;
-use crate::representation::{Directive, Element, Instruction};
+use crate::representation::{Directive, Element, Instruction, Line};
 
-pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
-    // This function will take a slice of tokens and attempt to recognise them as instructions or data.
-    // It will return a Result containing either the recognised instruction/data or an error if the tokens are not valid.
+fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
+    // This function will take a slice of tokens and attempt to recognise them as instructions or directives.
+    // It will return a Result Element containing either the recognised instruction/directive
+    // or an error if the tokens are not valid.
 
     let mut iter = tokens.iter(); // get an iterator over the tokens
     let first_token = iter.next(); // get the first token
@@ -81,13 +82,12 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
                 }
                 Element::Directive(Directive::DW(values))
             }
-            "DS" => {
-                let operand_token = iter.next().ok_or("Expected operand after DS")?;
-                match operand_token {
-                    Token::Unsigned(value) => Element::Directive(Directive::DS(*value)),
-                    _ => return Err("Expected unsigned value after DS".to_string()),
-                }
-            }
+            "DS" => match iter.next() {
+                // ToDo: check for unexpected tokens after the value?
+                None => return Err("Expected operand after DS".to_string()),
+                Some(Token::Unsigned(value)) => Element::Directive(Directive::DS(*value)),
+                _ => return Err("Expected unsigned value after DS".to_string()),
+            },
             "ABX" => Element::Instruction(Instruction::ABX),
             "ASLA" => Element::Instruction(Instruction::ASLA),
             "ASLB" => Element::Instruction(Instruction::ASLB),
@@ -139,4 +139,28 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
         _ => return Err("Unexpected token".to_string()),
     };
     Ok(Some(element))
+}
+
+pub fn recognise_line(tokens: &[Token]) -> Result<Line, String> {
+    // The line may end with a comment, so we check for that and separate it out if present.
+    let (comment, tokens) = if let Some(Token::Comment(comment_string)) = tokens.last() {
+        // The last token is a comment, so we take it out of the token slice and store it separately.
+        (
+            Some(comment_string.clone()), // store a copy of the comment string
+            &tokens[..tokens.len() - 1], // discard the last Token from the slice (i.e. the comment)
+        )
+    } else {
+        // No comment at the end of the line, or the line is empty, so we just proceed with the original tokens and no comment.
+        (None, tokens)
+    };
+    // Now we attempt to recognise the remaining tokens as an instruction or directive, and return a Line
+    // containing the recognised element and the comment (if any).
+    match recognise(tokens) {
+        Ok(None) => Ok(Line {
+            element: Element::Directive(Directive::BLANK),
+            comment,
+        }),
+        Ok(Some(element)) => Ok(Line { element, comment }),
+        Err(e) => Err(e),
+    }
 }
