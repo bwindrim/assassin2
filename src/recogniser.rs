@@ -12,10 +12,10 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     // If there is a name at the start of the line then we hold onto it as a potential
     // label, but if there is an empty token instead then we proceed with no label.
     let label = match first_token {
-        None => return Ok(None), // empty line
-        Some(Token::Empty) => None, // no label
+        None => return Ok(None),                    // empty line
+        Some(Token::Empty) => None,                 // no label
         Some(Token::Comment(_)) => return Ok(None), // comment-only line
-        Some(Token::Name(name)) => Some(name), // save the label
+        Some(Token::Name(name)) => Some(name),      // save the label
         _ => return Err("Unexpected token".to_string()),
     };
 
@@ -39,20 +39,21 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     let element = match next_token {
         None => return Ok(None),
         Some(Token::Name(mnemonic)) => match mnemonic.to_uppercase().as_str() {
-            "ORG" => {
-                match iter.next() {
-                    None => return Err("Expected operand after ORG".to_string()),
-                    Some(Token::Unsigned(value)) => Element::Directive(Directive::ORG(*value)),
-                    _ => return Err("Expected unsigned value after ORG".to_string()),
-                }
-            }
-            "EXEC" => {
-                match iter.next() {
-                    None => return Err("Expected operand after EXEC".to_string()),
-                    Some(Token::Unsigned(value)) => Element::Directive(Directive::EXEC(*value)),
-                    _ => return Err("Expected unsigned value after EXEC".to_string()),
-                }
-            }
+            "ORG" => match iter.next() {
+                None => return Err("Expected operand after ORG".to_string()),
+                Some(Token::Unsigned(value)) => Element::Directive(Directive::ORG(*value)),
+                _ => return Err("Expected unsigned value after ORG".to_string()),
+            },
+            "EXEC" => match iter.next() {
+                None => return Err("Expected operand after EXEC".to_string()),
+                Some(Token::Unsigned(value)) => Element::Directive(Directive::EXEC(*value)),
+                _ => return Err("Expected unsigned value after EXEC".to_string()),
+            },
+            "EQU" => match iter.next() {
+                None => return Err("Expected operand after EQU".to_string()),
+                Some(Token::Unsigned(value)) => Element::Directive(Directive::EQU(*value)),
+                _ => return Err("Expected unsigned value after EQU".to_string()),
+            },
             "DB" => {
                 let mut values = Vec::new();
                 for token in iter {

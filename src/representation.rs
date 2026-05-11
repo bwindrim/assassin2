@@ -383,6 +383,7 @@ pub enum Instruction {
 pub enum Directive {
     ORG(u16),
     EXEC(u16),
+    EQU(u16),
     DB(Vec<u8>),
     DW(Vec<u16>),
     DS(u16),
