@@ -1,11 +1,5 @@
-use core::panic;
-use std::env;
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::Path;
-
 #[derive(Debug)]
-enum Token {
+pub enum Token {
     Empty,
     Name(String),
     Unsigned(u16),
@@ -30,7 +24,7 @@ enum Token {
 }
 
 #[derive(Debug)]
-enum TokenizerError {
+pub enum TokenizerError {
     UnexpectedCharacter(char),
     UnterminatedString,
     UnterminatedChar,
@@ -40,7 +34,7 @@ enum TokenizerError {
     InvalidBin(String),
 }
 
-fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
+pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
     let mut tokens = Vec::new();
 
     // We iterate through the characters of the line, building up tokens as we go.
@@ -179,40 +173,3 @@ fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
     Ok(tokens)
 }
 
-// The output is wrapped in a Result to allow matching on errors.
-// Returns an Iterator to the Reader of the lines of the file.
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename);
-    match file {
-        Ok(file) => Ok(io::BufReader::new(file).lines()),
-        Err(e) => {
-            println!("Error reading file: {}", e);
-            Err(e)
-        }
-    }
-}
-
-pub fn parse(filename: &str) -> std::io::Result<()> {
-    let path = env::current_dir()?;
-    println!("The current directory is {}", path.display());
-
-    // File <filename> must exist in the current path
-    if let Ok(lines) = read_lines(filename) {
-        // Consumes the iterator, returns an (Optional) String
-        for line in lines.map_while(Result::ok) {
-            println!("{}", line);
-            {
-                let line: &str = &line;
-                let result = tokenize(line);
-                match result {
-                    Ok(tokens) => println!("{:?}", tokens),
-                    Err(e) => println!("Tokenizer error: {:?}", e),
-                }
-            };
-        }
-    }
-    Ok(())
-}
