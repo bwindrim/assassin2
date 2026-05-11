@@ -15,25 +15,25 @@ fn main() {
     let mut seg = Segment {
         name: "CODE".to_string(),
         elements: vec![
-            Element::Inst(Instruction::ABX),
-            Element::Inst(Instruction::ADDA(Type1::IMM(42))),
-            Element::Data(Directive::DB(vec![1, 2, 3])),
-            Element::Data(Directive::DW(vec![0x1234, 0x5678])),
-            Element::Data(Directive::DS(16)),
+            Element::Instruction(Instruction::ABX),
+            Element::Instruction(Instruction::ADDA(Type1::IMM(42))),
+            Element::Directive(Directive::DB(vec![1, 2, 3])),
+            Element::Directive(Directive::DW(vec![0x1234, 0x5678])),
+            Element::Directive(Directive::DS(16)),
         ],
     };
     let instr = Instruction::ADDA(Type1::IMM(42));
     println!("{:?} -> {:?}", instr, encode_instruction(&instr));
-    seg.elements.push(Element::Inst(instr));
+    seg.elements.push(Element::Instruction(instr));
     let instr = Instruction::ADDD(Type1::IMM(1042));
     println!("{:?} -> {:?}", instr, encode_instruction(&instr));
-    seg.elements.push(Element::Inst(instr));
+    seg.elements.push(Element::Instruction(instr));
     let instr = Instruction::EXG(Typext::from_tfr_exg_registers8(
         TfrExgRegister8::A,
         TfrExgRegister8::B,
     ));
     println!("{:?} -> {:?}", instr, encode_instruction(&instr));
-    seg.elements.push(Element::Inst(instr));
+    seg.elements.push(Element::Instruction(instr));
     println!("{:?}", seg);
 
     let _ = parse("tst/boot.a");

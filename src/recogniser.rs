@@ -1,5 +1,5 @@
 use crate::parser::Token;
-use crate::representation::{Directive, Element, Instruction, Segment};
+use crate::representation::{Directive, Element, Instruction};
 
 pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     // This function will take a slice of tokens and attempt to recognise them as instructions or data.
@@ -42,7 +42,7 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "ORG" => {
                 let operand_token = iter.next().ok_or("Expected operand after ORG")?;
                 match operand_token {
-                    Token::Unsigned(value) => Element::Data(Directive::ORG(*value)),
+                    Token::Unsigned(value) => Element::Directive(Directive::ORG(*value)),
                     _ => return Err("Expected unsigned value after ORG".to_string()),
                 }
             }
@@ -54,7 +54,7 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
                         _ => return Err("Expected unsigned value after DB".to_string()),
                     }
                 }
-                Element::Data(Directive::DB(values))
+                Element::Directive(Directive::DB(values))
             }
             "DW" => {
                 let mut values = Vec::new();
@@ -64,60 +64,60 @@ pub fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
                         _ => return Err("Expected unsigned value after DW".to_string()),
                     }
                 }
-                Element::Data(Directive::DW(values))
+                Element::Directive(Directive::DW(values))
             }
             "DS" => {
                 let operand_token = iter.next().ok_or("Expected operand after DS")?;
                 match operand_token {
-                    Token::Unsigned(value) => Element::Data(Directive::DS(*value as usize)),
+                    Token::Unsigned(value) => Element::Directive(Directive::DS(*value as usize)),
                     _ => return Err("Expected unsigned value after DS".to_string()),
                 }
             }
-            "ABX" => Element::Inst(Instruction::ABX),
-            "ASLA" => Element::Inst(Instruction::ASLA),
-            "ASLB" => Element::Inst(Instruction::ASLB),
-            "ASRA" => Element::Inst(Instruction::ASRA),
-            "ASRB" => Element::Inst(Instruction::ASRB),
-            "CLC" => Element::Inst(Instruction::CLC),
-            "CLF" => Element::Inst(Instruction::CLF),
-            "CLI" => Element::Inst(Instruction::CLI),
-            "CLIF" => Element::Inst(Instruction::CLIF),
-            "CLRA" => Element::Inst(Instruction::CLRA),
-            "CLRB" => Element::Inst(Instruction::CLRB),
-            "CLV" => Element::Inst(Instruction::CLV),
-            "COMA" => Element::Inst(Instruction::COMA),
-            "COMB" => Element::Inst(Instruction::COMB),
-            "DAA" => Element::Inst(Instruction::DAA),
-            "DECA" => Element::Inst(Instruction::DECA),
-            "DECB" => Element::Inst(Instruction::DECB),
-            "INCA" => Element::Inst(Instruction::INCA),
-            "INCB" => Element::Inst(Instruction::INCB),
-            "LSLA" => Element::Inst(Instruction::LSLA),
-            "LSLB" => Element::Inst(Instruction::LSLB),
-            "LSRA" => Element::Inst(Instruction::LSRA),
-            "LSRB" => Element::Inst(Instruction::LSRB),
-            "MUL" => Element::Inst(Instruction::MUL),
-            "NEGA" => Element::Inst(Instruction::NEGA),
-            "NEGB" => Element::Inst(Instruction::NEGB),
-            "NOP" => Element::Inst(Instruction::NOP),
-            "ROLA" => Element::Inst(Instruction::ROLA),
-            "ROLB" => Element::Inst(Instruction::ROLB),
-            "RORA" => Element::Inst(Instruction::RORA),
-            "RORB" => Element::Inst(Instruction::RORB),
-            "RTI" => Element::Inst(Instruction::RTI),
-            "RTS" => Element::Inst(Instruction::RTS),
-            "SEC" => Element::Inst(Instruction::SEC),
-            "SEF" => Element::Inst(Instruction::SEF),
-            "SEI" => Element::Inst(Instruction::SEI),
-            "SEIF" => Element::Inst(Instruction::SEIF),
-            "SEV" => Element::Inst(Instruction::SEV),
-            "SEX" => Element::Inst(Instruction::SEX),
-            "SWI" => Element::Inst(Instruction::SWI),
-            "SWI2" => Element::Inst(Instruction::SWI2),
-            "SWI3" => Element::Inst(Instruction::SWI3),
-            "SYNC" => Element::Inst(Instruction::SYNC),
-            "TSTA" => Element::Inst(Instruction::TSTA),
-            "TSTB" => Element::Inst(Instruction::TSTB),
+            "ABX" => Element::Instruction(Instruction::ABX),
+            "ASLA" => Element::Instruction(Instruction::ASLA),
+            "ASLB" => Element::Instruction(Instruction::ASLB),
+            "ASRA" => Element::Instruction(Instruction::ASRA),
+            "ASRB" => Element::Instruction(Instruction::ASRB),
+            "CLC" => Element::Instruction(Instruction::CLC),
+            "CLF" => Element::Instruction(Instruction::CLF),
+            "CLI" => Element::Instruction(Instruction::CLI),
+            "CLIF" => Element::Instruction(Instruction::CLIF),
+            "CLRA" => Element::Instruction(Instruction::CLRA),
+            "CLRB" => Element::Instruction(Instruction::CLRB),
+            "CLV" => Element::Instruction(Instruction::CLV),
+            "COMA" => Element::Instruction(Instruction::COMA),
+            "COMB" => Element::Instruction(Instruction::COMB),
+            "DAA" => Element::Instruction(Instruction::DAA),
+            "DECA" => Element::Instruction(Instruction::DECA),
+            "DECB" => Element::Instruction(Instruction::DECB),
+            "INCA" => Element::Instruction(Instruction::INCA),
+            "INCB" => Element::Instruction(Instruction::INCB),
+            "LSLA" => Element::Instruction(Instruction::LSLA),
+            "LSLB" => Element::Instruction(Instruction::LSLB),
+            "LSRA" => Element::Instruction(Instruction::LSRA),
+            "LSRB" => Element::Instruction(Instruction::LSRB),
+            "MUL" => Element::Instruction(Instruction::MUL),
+            "NEGA" => Element::Instruction(Instruction::NEGA),
+            "NEGB" => Element::Instruction(Instruction::NEGB),
+            "NOP" => Element::Instruction(Instruction::NOP),
+            "ROLA" => Element::Instruction(Instruction::ROLA),
+            "ROLB" => Element::Instruction(Instruction::ROLB),
+            "RORA" => Element::Instruction(Instruction::RORA),
+            "RORB" => Element::Instruction(Instruction::RORB),
+            "RTI" => Element::Instruction(Instruction::RTI),
+            "RTS" => Element::Instruction(Instruction::RTS),
+            "SEC" => Element::Instruction(Instruction::SEC),
+            "SEF" => Element::Instruction(Instruction::SEF),
+            "SEI" => Element::Instruction(Instruction::SEI),
+            "SEIF" => Element::Instruction(Instruction::SEIF),
+            "SEV" => Element::Instruction(Instruction::SEV),
+            "SEX" => Element::Instruction(Instruction::SEX),
+            "SWI" => Element::Instruction(Instruction::SWI),
+            "SWI2" => Element::Instruction(Instruction::SWI2),
+            "SWI3" => Element::Instruction(Instruction::SWI3),
+            "SYNC" => Element::Instruction(Instruction::SYNC),
+            "TSTA" => Element::Instruction(Instruction::TSTA),
+            "TSTB" => Element::Instruction(Instruction::TSTB),
 
             _ => return Err("unknown mnemonic".to_string()),
         },

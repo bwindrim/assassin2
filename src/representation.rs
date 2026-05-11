@@ -388,8 +388,8 @@ pub enum Directive {
 }
 #[derive(Debug)]
 pub enum Element {
-    Inst(Instruction),
-    Data(Directive),
+    Instruction(Instruction),
+    Directive(Directive),
 }
 #[derive(Debug)]
 pub struct Segment {
