@@ -1,5 +1,5 @@
 use crate::parser::Token;
-use crate::representation::{Directive, Element, Instruction, Line};
+use crate::representation::{Directive, Element, Instruction, Line, Typecc};
 
 fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     // This function will take a slice of tokens and attempt to recognise them as instructions or directives.
@@ -89,6 +89,7 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
                 _ => return Err("Expected unsigned value after DS".to_string()),
             },
             "ABX" => Element::Instruction(Instruction::ABX),
+            "ANDCC" => Element::Instruction(Instruction::ANDCC(do_typecc(&mut iter)?)),
             "ASLA" => Element::Instruction(Instruction::ASLA),
             "ASLB" => Element::Instruction(Instruction::ASLB),
             "ASRA" => Element::Instruction(Instruction::ASRA),
@@ -102,6 +103,7 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "CLV" => Element::Instruction(Instruction::CLV),
             "COMA" => Element::Instruction(Instruction::COMA),
             "COMB" => Element::Instruction(Instruction::COMB),
+            "CWAI" => Element::Instruction(Instruction::CWAI(do_typecc(&mut iter)?)),
             "DAA" => Element::Instruction(Instruction::DAA),
             "DECA" => Element::Instruction(Instruction::DECA),
             "DECB" => Element::Instruction(Instruction::DECB),
@@ -115,6 +117,7 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "NEGA" => Element::Instruction(Instruction::NEGA),
             "NEGB" => Element::Instruction(Instruction::NEGB),
             "NOP" => Element::Instruction(Instruction::NOP),
+            "ORCC" => Element::Instruction(Instruction::ORCC(do_typecc(&mut iter)?)),
             "ROLA" => Element::Instruction(Instruction::ROLA),
             "ROLB" => Element::Instruction(Instruction::ROLB),
             "RORA" => Element::Instruction(Instruction::RORA),
@@ -138,7 +141,24 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
         },
         _ => return Err("Unexpected token".to_string()),
     };
+    // ToDo: check for unexpected tokens remaining
     Ok(Some(element))
+}
+
+fn do_typecc(tokens: &mut std::slice::Iter<Token>) -> Result<Typecc, String> {
+    match tokens.next() {
+        Some(Token::Hash) => match tokens.next() {
+            Some(Token::Unsigned(value)) => {
+                if *value <= 255 {
+                    Ok(Typecc { mask: *value as u8 })
+                } else {
+                    Err("Invalid numeric value in condition mask".to_string())
+                }
+            }
+            _ => Err("Expected condition mask".to_string()),
+        },
+        _ => Err("Expected # before condition mask".to_string()),
+    }
 }
 
 pub fn recognise_line(tokens: &[Token]) -> Result<Line, String> {
