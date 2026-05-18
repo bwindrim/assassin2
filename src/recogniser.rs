@@ -57,7 +57,9 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             },
             "DB" => {
                 let mut values = Vec::new();
-                for token in iter {
+                // Use while let here, rather than a for loop, so that the iterator is
+                // still available after the loop to check for surplus tokens.
+                while let Some(token) = iter.next() {
                     match token {
                         // ToDo: make this stricter wrt. values and commas?
                         Token::Unsigned(value) => values.push(*value as u8),
@@ -71,7 +73,9 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             }
             "DW" => {
                 let mut values = Vec::new();
-                for token in iter {
+                // Use while let here, rather than a for loop, so that the iterator is
+                // still available after the loop to check for surplus tokens.
+                while let Some(token) = iter.next() {
                     match token {
                         // ToDo: make this stricter wrt. values and commas?
                         Token::Unsigned(value) => values.push(*value),
@@ -142,6 +146,12 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
         _ => return Err("Unexpected token".to_string()),
     };
     // ToDo: check for unexpected tokens remaining
+    if let Some(token) = iter.next() {
+        match token {
+            Token::Comment(_) => {} // allow a comment at the end of the line
+            _ => return Err("Unexpected token(s) at end of line".to_string()),
+        }
+    }
     Ok(Some(element))
 }
 
