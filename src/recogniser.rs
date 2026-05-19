@@ -1,5 +1,7 @@
 use crate::parser::Token;
-use crate::representation::{Directive, Element, Instruction, Line, Typecc};
+use crate::representation::{
+    Directive, Element, Instruction, Line, TfrExgRegister8, TfrExgRegister16, Typecc, Typext,
+};
 
 fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     // This function will take a slice of tokens and attempt to recognise them as instructions or directives.
@@ -111,6 +113,7 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "DAA" => Element::Instruction(Instruction::DAA),
             "DECA" => Element::Instruction(Instruction::DECA),
             "DECB" => Element::Instruction(Instruction::DECB),
+            "EXG" => Element::Instruction(Instruction::EXG(do_typext(&mut iter)?)),
             "INCA" => Element::Instruction(Instruction::INCA),
             "INCB" => Element::Instruction(Instruction::INCB),
             "LSLA" => Element::Instruction(Instruction::LSLA),
@@ -138,6 +141,7 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "SWI2" => Element::Instruction(Instruction::SWI2),
             "SWI3" => Element::Instruction(Instruction::SWI3),
             "SYNC" => Element::Instruction(Instruction::SYNC),
+            "TFR" => Element::Instruction(Instruction::TFR(do_typext(&mut iter)?)),
             "TSTA" => Element::Instruction(Instruction::TSTA),
             "TSTB" => Element::Instruction(Instruction::TSTB),
 
@@ -145,7 +149,6 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
         },
         _ => return Err("Unexpected token".to_string()),
     };
-    // ToDo: check for unexpected tokens remaining
     if let Some(token) = iter.next() {
         match token {
             Token::Comment(_) => {} // allow a comment at the end of the line
@@ -168,6 +171,58 @@ fn do_typecc(tokens: &mut std::slice::Iter<Token>) -> Result<Typecc, String> {
             _ => Err("Expected condition mask".to_string()),
         },
         _ => Err("Expected # before condition mask".to_string()),
+    }
+}
+
+fn get_tfr_exg_register16(reg: &str) -> Result<TfrExgRegister16, String> {
+    match reg {
+        "D" | "d" => Ok(TfrExgRegister16::D),
+        "X" | "x" => Ok(TfrExgRegister16::X),
+        "Y" | "y" => Ok(TfrExgRegister16::Y),
+        "U" | "u" => Ok(TfrExgRegister16::U),
+        "S" | "s" => Ok(TfrExgRegister16::S),
+        "PC" | "pc" => Ok(TfrExgRegister16::PC),
+        _ => Err(format!("Invalid TFR/EXG register: {}", reg)),
+    }
+}
+
+fn get_tfr_exg_register8(reg: &str) -> Result<TfrExgRegister8, String> {
+    match reg {
+        "A" | "a" => Ok(TfrExgRegister8::A),
+        "B" | "b" => Ok(TfrExgRegister8::B),
+        "CC" | "cc" => Ok(TfrExgRegister8::CC),
+        "DP" | "dp" => Ok(TfrExgRegister8::DP),
+        _ => Err(format!("Invalid TFR/EXG register: {}", reg)),
+    }
+}
+
+fn do_typext(token: &mut std::slice::Iter<Token>) -> Result<Typext, String> {
+    if let Some(Token::Name(src)) = token.next() {
+        if let Some(Token::Comma) = token.next() {
+            if let Some(Token::Name(dst)) = token.next() {
+                if let Ok(src_reg) = get_tfr_exg_register8(src) {
+                    if let Ok(dst_reg) = get_tfr_exg_register8(dst) {
+                        Ok(Typext::BYTE(src_reg, dst_reg))
+                    } else {
+                        Err(format!("Invalid TFR/EXG destination register: {}", dst))
+                    }
+                } else if let Ok(src_reg) = get_tfr_exg_register16(src) {
+                    if let Ok(dst_reg) = get_tfr_exg_register16(dst) {
+                        Ok(Typext::WORD(src_reg, dst_reg))
+                    } else {
+                        Err(format!("Invalid TFR/EXG destination register: {}", dst))
+                    }
+                } else {
+                    Err(format!("Invalid TFR/EXG source register: {}", src))
+                }
+            } else {
+                Err("Expected destination register after comma in TFR/EXG".to_string())
+            }
+        } else {
+            Err("Expected comma after source register in TFR/EXG".to_string())
+        }
+    } else {
+        Err("Expected source register in TFR/EXG".to_string())
     }
 }
 

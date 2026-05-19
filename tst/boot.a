@@ -54,5 +54,8 @@ getbyte:	ldb	<$0D	; load A from IFR
 		sbeq	getbyte		; loop if CA1 not set
 		ldb	<1			; load A from IRA
 		cwai	#$FF 0			; wait for next interrupt
+		dw	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 		stb	<0			; store A to ORB (blind echo)
 		exg	u,pc		; return via link address in u
+		exg a,b
+		exg b,x
