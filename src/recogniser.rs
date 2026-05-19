@@ -201,17 +201,11 @@ fn do_typext(token: &mut std::slice::Iter<Token>) -> Result<Typext, String> {
         if let Some(Token::Comma) = token.next() {
             if let Some(Token::Name(dst)) = token.next() {
                 if let Ok(src_reg) = get_tfr_exg_register8(src) {
-                    if let Ok(dst_reg) = get_tfr_exg_register8(dst) {
-                        Ok(Typext::BYTE(src_reg, dst_reg))
-                    } else {
-                        Err(format!("Invalid TFR/EXG destination register: {}", dst))
-                    }
+                    let dst_reg = get_tfr_exg_register8(dst)?;
+                    Ok(Typext::BYTE(src_reg, dst_reg))
                 } else if let Ok(src_reg) = get_tfr_exg_register16(src) {
-                    if let Ok(dst_reg) = get_tfr_exg_register16(dst) {
-                        Ok(Typext::WORD(src_reg, dst_reg))
-                    } else {
-                        Err(format!("Invalid TFR/EXG destination register: {}", dst))
-                    }
+                    let dst_reg = get_tfr_exg_register16(dst)?;
+                    Ok(Typext::WORD(src_reg, dst_reg))
                 } else {
                     Err(format!("Invalid TFR/EXG source register: {}", src))
                 }
