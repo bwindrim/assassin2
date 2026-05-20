@@ -59,3 +59,7 @@ getbyte:	ldb	<$0D	; load A from IFR
 		exg	u,pc		; return via link address in u
 		exg a,b
 		exg b,x
+		pshs u,y,pc
+		puls y,u,pc
+		pshu x,y,pc
+		pulu y,u,pc

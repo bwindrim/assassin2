@@ -35,12 +35,14 @@ impl IntoBytes for u16 {
 // This separation of concerns makes the code more modular and easier to understand.
 
 #[derive(Debug)]
+#[derive(Eq, Hash, PartialEq)]
 pub enum PushPullRegister {
     A,
     B,
     X,
     Y,
-    US,
+    U,
+    S,
     PC,
     CC,
     DP,
