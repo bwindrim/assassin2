@@ -186,8 +186,7 @@ fn encode_typepspl(opcode: u8, operand: &Typepspl) -> Vec<u8> {
             PushPullRegister::DP => 0x08,
             PushPullRegister::X => 0x10,
             PushPullRegister::Y => 0x20,
-            PushPullRegister::U => 0x40,
-            PushPullRegister::S => 0x40,
+            PushPullRegister::US => 0x40,
             PushPullRegister::PC => 0x80,
         };
     }

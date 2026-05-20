@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use crate::parser::Token;
 use crate::representation::{
-    Directive, Element, Instruction, Line, TfrExgRegister8, TfrExgRegister16, PushPullRegister, Typecc, Typepspl, Typext
+    Directive, Element, Instruction, Line, TfrExgRegister8, TfrExgRegister16, PushPullRegister, Typecc, Typepspl, Typext, Stack
 };
 
 fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
@@ -126,10 +126,10 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "NEGB" => Element::Instruction(Instruction::NEGB),
             "NOP" => Element::Instruction(Instruction::NOP),
             "ORCC" => Element::Instruction(Instruction::ORCC(do_typecc(&mut iter)?)),
-            "PSHS" => Element::Instruction(Instruction::PSHS(do_typepspl(&mut iter)?)),
-            "PSHU" => Element::Instruction(Instruction::PSHU(do_typepspl(&mut iter)?)),
-            "PULS" => Element::Instruction(Instruction::PULS(do_typepspl(&mut iter)?)),
-            "PULU" => Element::Instruction(Instruction::PULU(do_typepspl(&mut iter)?)),
+            "PSHS" => Element::Instruction(Instruction::PSHS(do_typepspl(Stack::S, &mut iter)?)),
+            "PSHU" => Element::Instruction(Instruction::PSHU(do_typepspl(Stack::U, &mut iter)?)),
+            "PULS" => Element::Instruction(Instruction::PULS(do_typepspl(Stack::S, &mut iter)?)),
+            "PULU" => Element::Instruction(Instruction::PULU(do_typepspl(Stack::U, &mut iter)?)),
             "ROLA" => Element::Instruction(Instruction::ROLA),
             "ROLB" => Element::Instruction(Instruction::ROLB),
             "RORA" => Element::Instruction(Instruction::RORA),
@@ -225,14 +225,22 @@ fn do_typext(token: &mut std::slice::Iter<Token>) -> Result<Typext, String> {
     }
 }
 
-fn get_pspl_register(reg: &str) -> Result<PushPullRegister, String> {
+fn get_pspl_register(reg: &str, stack: &Stack) -> Result<PushPullRegister, String> {
     match reg {
         "A" | "a" => Ok(PushPullRegister::A),
         "B" | "b" => Ok(PushPullRegister::B),
         "X" | "x" => Ok(PushPullRegister::X),
         "Y" | "y" => Ok(PushPullRegister::Y),
-        "U" | "u" => Ok(PushPullRegister::U),
-        "S" | "s" => Ok(PushPullRegister::S),
+        "U" | "u" => if *stack == Stack::S {
+            Ok(PushPullRegister::US)
+        } else {
+            Err("Can't push/pull U register when stack is U".to_string())
+        },
+        "S" | "s" => if *stack == Stack::U {
+            Ok(PushPullRegister::US)
+        } else {
+            Err("Can't push/pull S register when stack is S".to_string())
+        },
         "PC" | "pc" => Ok(PushPullRegister::PC),
         "CC" | "cc" => Ok(PushPullRegister::CC),
         "DP" | "dp" => Ok(PushPullRegister::DP),
@@ -240,14 +248,14 @@ fn get_pspl_register(reg: &str) -> Result<PushPullRegister, String> {
     }
 }
 
-fn do_typepspl(tokens: &mut std::slice::Iter<Token>) -> Result<Typepspl, String> {
+fn do_typepspl(stack: Stack, tokens: &mut std::slice::Iter<Token>) -> Result<Typepspl, String> {
     if let Some(Token::Name(reg_name)) = tokens.next() {
         let mut registers: HashSet<PushPullRegister> = HashSet::new();
-        let reg = get_pspl_register(reg_name)?;
+        let reg = get_pspl_register(reg_name, &stack)?;
         registers.insert(reg);
         while let Some(Token::Comma) = tokens.next() {
             if let Some(Token::Name(reg_name)) = tokens.next() {
-                let reg = get_pspl_register(reg_name)?;  
+                let reg = get_pspl_register(reg_name, &stack)?;  
                 if !registers.insert(reg) {
                     return Err(format!("Duplicate register in PSH/PUL: {}", reg_name));
                 }

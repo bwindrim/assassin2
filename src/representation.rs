@@ -41,8 +41,7 @@ pub enum PushPullRegister {
     B,
     X,
     Y,
-    U,
-    S,
+    US,
     PC,
     CC,
     DP,
@@ -166,6 +165,13 @@ pub enum Typebr {
     SHORT(i8),
     LONG(i16),
     UNRESOLVED(String),
+}
+
+#[derive(Debug)]
+#[derive(PartialEq)]
+pub enum Stack {
+    S,
+    U,
 }
 
 // Typepspl instructions have a list (actually a set) of operands,
