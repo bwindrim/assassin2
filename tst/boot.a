@@ -63,3 +63,5 @@ getbyte:	ldb	<$0D	; load A from IFR
 		puls y,u,pc
 		pshu x,y,pc
 		pulu y,u,pc
+		tst	0
+		

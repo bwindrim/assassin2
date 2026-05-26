@@ -1,7 +1,7 @@
 use crate::parser::Token;
 use crate::representation::{
     Directive, Element, Instruction, Line, PushPullRegister, Stack, TfrExgRegister8,
-    TfrExgRegister16, Typecc, Typepspl, Typext,
+    TfrExgRegister16, Typecc, Typepspl, Typext, Type2,
 };
 use std::collections::HashSet;
 
@@ -100,31 +100,46 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "ANDCC" => Element::Instruction(Instruction::ANDCC(do_typecc(&mut iter)?)),
             "ASLA" => Element::Instruction(Instruction::ASLA),
             "ASLB" => Element::Instruction(Instruction::ASLB),
+            "ASL" => Element::Instruction(Instruction::ASL(do_type2(&mut iter)?)),
             "ASRA" => Element::Instruction(Instruction::ASRA),
             "ASRB" => Element::Instruction(Instruction::ASRB),
+            "ASR" => Element::Instruction(Instruction::ASR(do_type2(&mut iter)?)),
             "CLC" => Element::Instruction(Instruction::CLC),
             "CLF" => Element::Instruction(Instruction::CLF),
             "CLI" => Element::Instruction(Instruction::CLI),
             "CLIF" => Element::Instruction(Instruction::CLIF),
             "CLRA" => Element::Instruction(Instruction::CLRA),
             "CLRB" => Element::Instruction(Instruction::CLRB),
+            "CLR" => Element::Instruction(Instruction::CLR(do_type2(&mut iter)?)),
             "CLV" => Element::Instruction(Instruction::CLV),
             "COMA" => Element::Instruction(Instruction::COMA),
             "COMB" => Element::Instruction(Instruction::COMB),
+            "COM" => Element::Instruction(Instruction::COM(do_type2(&mut iter)?)),
             "CWAI" => Element::Instruction(Instruction::CWAI(do_typecc(&mut iter)?)),
             "DAA" => Element::Instruction(Instruction::DAA),
             "DECA" => Element::Instruction(Instruction::DECA),
             "DECB" => Element::Instruction(Instruction::DECB),
+            "DEC" => Element::Instruction(Instruction::DEC(do_type2(&mut iter)?)),
             "EXG" => Element::Instruction(Instruction::EXG(do_typext(&mut iter)?)),
             "INCA" => Element::Instruction(Instruction::INCA),
             "INCB" => Element::Instruction(Instruction::INCB),
+            "INC" => Element::Instruction(Instruction::INC(do_type2(&mut iter)?)),
+            "JMP" => Element::Instruction(Instruction::JMP(do_type2(&mut iter)?)),
+            "JSR" => Element::Instruction(Instruction::JSR(do_type2(&mut iter)?)),
+            "LEAX" => Element::Instruction(Instruction::LEAX(do_type2(&mut iter)?)),
+            "LEAY" => Element::Instruction(Instruction::LEAY(do_type2(&mut iter)?)),
+            "LEAU" => Element::Instruction(Instruction::LEAU(do_type2(&mut iter)?)),
+            "LEAS" => Element::Instruction(Instruction::LEAS(do_type2(&mut iter)?)),
             "LSLA" => Element::Instruction(Instruction::LSLA),
             "LSLB" => Element::Instruction(Instruction::LSLB),
+            "LSL" => Element::Instruction(Instruction::LSL(do_type2(&mut iter)?)),
             "LSRA" => Element::Instruction(Instruction::LSRA),
             "LSRB" => Element::Instruction(Instruction::LSRB),
+            "LSR" => Element::Instruction(Instruction::LSR(do_type2(&mut iter)?)),
             "MUL" => Element::Instruction(Instruction::MUL),
             "NEGA" => Element::Instruction(Instruction::NEGA),
             "NEGB" => Element::Instruction(Instruction::NEGB),
+            "NEG" => Element::Instruction(Instruction::NEG(do_type2(&mut iter)?)),
             "NOP" => Element::Instruction(Instruction::NOP),
             "ORCC" => Element::Instruction(Instruction::ORCC(do_typecc(&mut iter)?)),
             "PSHS" => Element::Instruction(Instruction::PSHS(do_typepspl(Stack::S, &mut iter)?)),
@@ -133,8 +148,10 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "PULU" => Element::Instruction(Instruction::PULU(do_typepspl(Stack::U, &mut iter)?)),
             "ROLA" => Element::Instruction(Instruction::ROLA),
             "ROLB" => Element::Instruction(Instruction::ROLB),
+            "ROL" => Element::Instruction(Instruction::ROL(do_type2(&mut iter)?)),
             "RORA" => Element::Instruction(Instruction::RORA),
             "RORB" => Element::Instruction(Instruction::RORB),
+            "ROR" => Element::Instruction(Instruction::ROR(do_type2(&mut iter)?)),
             "RTI" => Element::Instruction(Instruction::RTI),
             "RTS" => Element::Instruction(Instruction::RTS),
             "SEC" => Element::Instruction(Instruction::SEC),
@@ -143,6 +160,13 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "SEIF" => Element::Instruction(Instruction::SEIF),
             "SEV" => Element::Instruction(Instruction::SEV),
             "SEX" => Element::Instruction(Instruction::SEX),
+            "STA" => Element::Instruction(Instruction::STA(do_type2(&mut iter)?)),
+            "STB" => Element::Instruction(Instruction::STB(do_type2(&mut iter)?)),
+            "STD" => Element::Instruction(Instruction::STD(do_type2(&mut iter)?)),
+            "STX" => Element::Instruction(Instruction::STX(do_type2(&mut iter)?)),
+            "STY" => Element::Instruction(Instruction::STY(do_type2(&mut iter)?)),
+            "STU" => Element::Instruction(Instruction::STU(do_type2(&mut iter)?)),
+            "STS" => Element::Instruction(Instruction::STS(do_type2(&mut iter)?)),
             "SWI" => Element::Instruction(Instruction::SWI),
             "SWI2" => Element::Instruction(Instruction::SWI2),
             "SWI3" => Element::Instruction(Instruction::SWI3),
@@ -150,6 +174,7 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "TFR" => Element::Instruction(Instruction::TFR(do_typext(&mut iter)?)),
             "TSTA" => Element::Instruction(Instruction::TSTA),
             "TSTB" => Element::Instruction(Instruction::TSTB),
+            "TST" => Element::Instruction(Instruction::TST(do_type2(&mut iter)?)),
 
             _ => return Err("unknown mnemonic".to_string()),
         },
@@ -271,6 +296,14 @@ fn do_typepspl(stack: Stack, tokens: &mut std::slice::Iter<Token>) -> Result<Typ
         Ok(Typepspl { registers })
     } else {
         Err("Expected register name in PSH/PUL".to_string())
+    }
+}
+
+pub fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
+    if let Some(Token::Unsigned(value)) = tokens.next() {
+        Ok(Type2::EXT(*value))
+    } else {
+        Err("Expected unsigned value after # in Type2 operand".to_string())
     }
 }
 
