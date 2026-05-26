@@ -64,4 +64,6 @@ getbyte:	ldb	<$0D	; load A from IFR
 		pshu x,y,pc
 		pulu y,u,pc
 		tst	0
-		
+		com	<0
+		inc	>0
+		neg <$FFFF
