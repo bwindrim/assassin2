@@ -1,8 +1,9 @@
-use std::collections::HashSet;
 use crate::parser::Token;
 use crate::representation::{
-    Directive, Element, Instruction, Line, TfrExgRegister8, TfrExgRegister16, PushPullRegister, Typecc, Typepspl, Typext, Stack
+    Directive, Element, Instruction, Line, PushPullRegister, Stack, TfrExgRegister8,
+    TfrExgRegister16, Typecc, Typepspl, Typext,
 };
+use std::collections::HashSet;
 
 fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     // This function will take a slice of tokens and attempt to recognise them as instructions or directives.
@@ -179,29 +180,29 @@ fn do_typecc(tokens: &mut std::slice::Iter<Token>) -> Result<Typecc, String> {
     }
 }
 
-fn get_tfr_exg_register16(reg: &str) -> Result<TfrExgRegister16, String> {
-    match reg {
-        "D" | "d" => Ok(TfrExgRegister16::D),
-        "X" | "x" => Ok(TfrExgRegister16::X),
-        "Y" | "y" => Ok(TfrExgRegister16::Y),
-        "U" | "u" => Ok(TfrExgRegister16::U),
-        "S" | "s" => Ok(TfrExgRegister16::S),
-        "PC" | "pc" => Ok(TfrExgRegister16::PC),
-        _ => Err(format!("Invalid TFR/EXG register: {}", reg)),
-    }
-}
-
-fn get_tfr_exg_register8(reg: &str) -> Result<TfrExgRegister8, String> {
-    match reg {
-        "A" | "a" => Ok(TfrExgRegister8::A),
-        "B" | "b" => Ok(TfrExgRegister8::B),
-        "CC" | "cc" => Ok(TfrExgRegister8::CC),
-        "DP" | "dp" => Ok(TfrExgRegister8::DP),
-        _ => Err(format!("Invalid TFR/EXG register: {}", reg)),
-    }
-}
-
 fn do_typext(token: &mut std::slice::Iter<Token>) -> Result<Typext, String> {
+    fn get_tfr_exg_register16(reg: &str) -> Result<TfrExgRegister16, String> {
+        match reg {
+            "D" | "d" => Ok(TfrExgRegister16::D),
+            "X" | "x" => Ok(TfrExgRegister16::X),
+            "Y" | "y" => Ok(TfrExgRegister16::Y),
+            "U" | "u" => Ok(TfrExgRegister16::U),
+            "S" | "s" => Ok(TfrExgRegister16::S),
+            "PC" | "pc" => Ok(TfrExgRegister16::PC),
+            _ => Err(format!("Invalid TFR/EXG register: {}", reg)),
+        }
+    }
+
+    fn get_tfr_exg_register8(reg: &str) -> Result<TfrExgRegister8, String> {
+        match reg {
+            "A" | "a" => Ok(TfrExgRegister8::A),
+            "B" | "b" => Ok(TfrExgRegister8::B),
+            "CC" | "cc" => Ok(TfrExgRegister8::CC),
+            "DP" | "dp" => Ok(TfrExgRegister8::DP),
+            _ => Err(format!("Invalid TFR/EXG register: {}", reg)),
+        }
+    }
+
     if let Some(Token::Name(src)) = token.next() {
         if let Some(Token::Comma) = token.next() {
             if let Some(Token::Name(dst)) = token.next() {
@@ -225,37 +226,41 @@ fn do_typext(token: &mut std::slice::Iter<Token>) -> Result<Typext, String> {
     }
 }
 
-fn get_pspl_register(reg: &str, stack: &Stack) -> Result<PushPullRegister, String> {
-    match reg {
-        "A" | "a" => Ok(PushPullRegister::A),
-        "B" | "b" => Ok(PushPullRegister::B),
-        "X" | "x" => Ok(PushPullRegister::X),
-        "Y" | "y" => Ok(PushPullRegister::Y),
-        "U" | "u" => if *stack == Stack::S {
-            Ok(PushPullRegister::US)
-        } else {
-            Err("Can't push/pull U register when stack is U".to_string())
-        },
-        "S" | "s" => if *stack == Stack::U {
-            Ok(PushPullRegister::US)
-        } else {
-            Err("Can't push/pull S register when stack is S".to_string())
-        },
-        "PC" | "pc" => Ok(PushPullRegister::PC),
-        "CC" | "cc" => Ok(PushPullRegister::CC),
-        "DP" | "dp" => Ok(PushPullRegister::DP),
-        _ => Err(format!("Invalid PSH/PUL register: {}", reg)),
-    }
-}
-
 fn do_typepspl(stack: Stack, tokens: &mut std::slice::Iter<Token>) -> Result<Typepspl, String> {
+    fn get_pspl_register(reg: &str, stack: &Stack) -> Result<PushPullRegister, String> {
+        match reg {
+            "A" | "a" => Ok(PushPullRegister::A),
+            "B" | "b" => Ok(PushPullRegister::B),
+            "X" | "x" => Ok(PushPullRegister::X),
+            "Y" | "y" => Ok(PushPullRegister::Y),
+            "U" | "u" => {
+                if *stack == Stack::S {
+                    Ok(PushPullRegister::US)
+                } else {
+                    Err("Can't push/pull U register on U stack".to_string())
+                }
+            }
+            "S" | "s" => {
+                if *stack == Stack::U {
+                    Ok(PushPullRegister::US)
+                } else {
+                    Err("Can't push/pull S register on S stack".to_string())
+                }
+            }
+            "PC" | "pc" => Ok(PushPullRegister::PC),
+            "CC" | "cc" => Ok(PushPullRegister::CC),
+            "DP" | "dp" => Ok(PushPullRegister::DP),
+            _ => Err(format!("Invalid PSH/PUL register: {}", reg)),
+        }
+    }
+
     if let Some(Token::Name(reg_name)) = tokens.next() {
         let mut registers: HashSet<PushPullRegister> = HashSet::new();
         let reg = get_pspl_register(reg_name, &stack)?;
         registers.insert(reg);
         while let Some(Token::Comma) = tokens.next() {
             if let Some(Token::Name(reg_name)) = tokens.next() {
-                let reg = get_pspl_register(reg_name, &stack)?;  
+                let reg = get_pspl_register(reg_name, &stack)?;
                 if !registers.insert(reg) {
                     return Err(format!("Duplicate register in PSH/PUL: {}", reg_name));
                 }
