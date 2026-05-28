@@ -331,18 +331,38 @@ fn do_typepspl(stack: Stack, tokens: &mut std::slice::Iter<Token>) -> Result<Typ
 pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
     tokens: &mut std::slice::Iter<Token>,
 ) -> Result<Type1<T>, String> {
-    if let Some(Token::Hash) = tokens.next() {
-        if let Some(Token::Unsigned(value)) = tokens.next() {
-            // If T is only ever u8 or u16, this makes the mismatch go away.
-            // If the IntoBytes trait provided a conversion API we could use that instead of TryFrom<u16>.
-            let imm = T::try_from(*value)
-                .map_err(|_| "Immediate value not valid for Type1 operand type".to_string())?;
-            Ok(Type1::IMM(imm))
-        } else {
-            Err("Expected unsigned value after # in Type1 operand".to_string())
+    match tokens.next() {
+        Some(Token::Hash) => {
+            if let Some(Token::Unsigned(value)) = tokens.next() {
+                // If T is only ever u8 or u16, this makes the mismatch go away.
+                // If the IntoBytes trait provided a conversion API we could use that instead of TryFrom<u16>.
+                let imm = T::try_from(*value)
+                    .map_err(|_| "Immediate value not valid for Type1 operand type".to_string())?;
+                Ok(Type1::IMM(imm))
+            } else {
+                Err("Expected unsigned value after # in Type1 operand".to_string())
+            }
+        },
+        Some(Token::LessThan) => {
+            if let Some(Token::Unsigned(value)) = tokens.next() {
+                if *value <= 255 {
+                    Ok(Type1::DIR(*value as u8))
+                } else {
+                    Err("Direct page address too large for 8-bit offset".to_string())
+                }
+            } else {
+                Err("Expected unsigned value after < in Type1 operand".to_string())
+            }
         }
-    } else {
-        Err("Expected # before immediate value in Type1 operand".to_string())
+        Some(Token::GreaterThan) => {
+            if let Some(Token::Unsigned(value)) = tokens.next() {
+                Ok(Type1::EXT(*value))
+            } else {
+                Err("Expected unsigned value after > in Type1 operand".to_string())
+            }
+        }
+        Some(Token::Unsigned(value)) => Ok(Type1::EXT(*value)),
+        _ => Err("Expected unsigned value in Type1 operand".to_string()),
     }
 }
 

@@ -68,8 +68,8 @@ getbyte:	ldb	<$0D	; load A from IFR
 		inc	>0
 		neg <$FFFF
 		addd		#$1234
-		subd		#$1234
-		adda		#$12
-		addb		#$34
+		subd		$1234
+		adda		<$12
+		addb		>$34
 		suba		#$12
 		subb		#$3400

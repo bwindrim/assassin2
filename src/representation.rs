@@ -152,12 +152,6 @@ pub enum Type2 {
     IND(IndexedIndirect),
 }
 
-impl From<IndexedIndirect> for Type2 {
-    fn from(v: IndexedIndirect) -> Self {
-        Self::IND(v)
-    }
-}
-
 // Typebr instructions have a single operand,
 // which is a branch target label.
 #[derive(Debug)]
