@@ -1,9 +1,10 @@
 use crate::parser::Token;
 use crate::representation::{
-    Directive, Element, Instruction, Line, PushPullRegister, Stack, TfrExgRegister8,
-    TfrExgRegister16, Type2, Typecc, Typepspl, Typext,
+    Directive, Element, Instruction, IntoBytes, Line, PushPullRegister, Stack, TfrExgRegister8,
+    TfrExgRegister16, Type1, Type2, Typecc, Typepspl, Typext,
 };
 use std::collections::HashSet;
+use std::convert::TryFrom;
 
 fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
     // This function will take a slice of tokens and attempt to recognise them as instructions or directives.
@@ -97,6 +98,13 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
                 _ => return Err("Expected unsigned value after DS".to_string()),
             },
             "ABX" => Element::Instruction(Instruction::ABX),
+            "ADCA" => Element::Instruction(Instruction::ADCA(do_type1(&mut iter)?)),
+            "ADCB" => Element::Instruction(Instruction::ADCB(do_type1(&mut iter)?)),
+            "ADDA" => Element::Instruction(Instruction::ADDA(do_type1(&mut iter)?)),
+            "ADDB" => Element::Instruction(Instruction::ADDB(do_type1(&mut iter)?)),
+            "ADDD" => Element::Instruction(Instruction::ADDD(do_type1(&mut iter)?)),
+            "ANDA" => Element::Instruction(Instruction::ANDA(do_type1(&mut iter)?)),
+            "ANDB" => Element::Instruction(Instruction::ANDB(do_type1(&mut iter)?)),
             "ANDCC" => Element::Instruction(Instruction::ANDCC(do_typecc(&mut iter)?)),
             "ASLA" => Element::Instruction(Instruction::ASLA),
             "ASLB" => Element::Instruction(Instruction::ASLB),
@@ -111,6 +119,13 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "CLRA" => Element::Instruction(Instruction::CLRA),
             "CLRB" => Element::Instruction(Instruction::CLRB),
             "CLR" => Element::Instruction(Instruction::CLR(do_type2(&mut iter)?)),
+            "CMPA" => Element::Instruction(Instruction::CMPA(do_type1(&mut iter)?)),
+            "CMPB" => Element::Instruction(Instruction::CMPB(do_type1(&mut iter)?)),
+            "CMPD" => Element::Instruction(Instruction::CMPD(do_type1(&mut iter)?)),
+            "CMPS" => Element::Instruction(Instruction::CMPS(do_type1(&mut iter)?)),
+            "CMPU" => Element::Instruction(Instruction::CMPU(do_type1(&mut iter)?)),
+            "CMPX" => Element::Instruction(Instruction::CMPX(do_type1(&mut iter)?)),
+            "CMPY" => Element::Instruction(Instruction::CMPY(do_type1(&mut iter)?)),
             "CLV" => Element::Instruction(Instruction::CLV),
             "COMA" => Element::Instruction(Instruction::COMA),
             "COMB" => Element::Instruction(Instruction::COMB),
@@ -126,6 +141,13 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "INC" => Element::Instruction(Instruction::INC(do_type2(&mut iter)?)),
             "JMP" => Element::Instruction(Instruction::JMP(do_type2(&mut iter)?)),
             "JSR" => Element::Instruction(Instruction::JSR(do_type2(&mut iter)?)),
+            "LDA" => Element::Instruction(Instruction::LDA(do_type1(&mut iter)?)),
+            "LDB" => Element::Instruction(Instruction::LDB(do_type1(&mut iter)?)),
+            "LDD" => Element::Instruction(Instruction::LDD(do_type1(&mut iter)?)),
+            "LDX" => Element::Instruction(Instruction::LDX(do_type1(&mut iter)?)),
+            "LDY" => Element::Instruction(Instruction::LDY(do_type1(&mut iter)?)),
+            "LDS" => Element::Instruction(Instruction::LDS(do_type1(&mut iter)?)),
+            "LDU" => Element::Instruction(Instruction::LDU(do_type1(&mut iter)?)),
             "LEAX" => Element::Instruction(Instruction::LEAX(do_type2(&mut iter)?)),
             "LEAY" => Element::Instruction(Instruction::LEAY(do_type2(&mut iter)?)),
             "LEAU" => Element::Instruction(Instruction::LEAU(do_type2(&mut iter)?)),
@@ -141,6 +163,8 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "NEGB" => Element::Instruction(Instruction::NEGB),
             "NEG" => Element::Instruction(Instruction::NEG(do_type2(&mut iter)?)),
             "NOP" => Element::Instruction(Instruction::NOP),
+            "ORA" => Element::Instruction(Instruction::ORA(do_type1(&mut iter)?)),
+            "ORB" => Element::Instruction(Instruction::ORB(do_type1(&mut iter)?)),
             "ORCC" => Element::Instruction(Instruction::ORCC(do_typecc(&mut iter)?)),
             "PSHS" => Element::Instruction(Instruction::PSHS(do_typepspl(Stack::S, &mut iter)?)),
             "PSHU" => Element::Instruction(Instruction::PSHU(do_typepspl(Stack::U, &mut iter)?)),
@@ -154,6 +178,8 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "ROR" => Element::Instruction(Instruction::ROR(do_type2(&mut iter)?)),
             "RTI" => Element::Instruction(Instruction::RTI),
             "RTS" => Element::Instruction(Instruction::RTS),
+            "SBCA" => Element::Instruction(Instruction::SBCA(do_type1(&mut iter)?)),
+            "SBCB" => Element::Instruction(Instruction::SBCB(do_type1(&mut iter)?)),
             "SEC" => Element::Instruction(Instruction::SEC),
             "SEF" => Element::Instruction(Instruction::SEF),
             "SEI" => Element::Instruction(Instruction::SEI),
@@ -167,6 +193,9 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "STY" => Element::Instruction(Instruction::STY(do_type2(&mut iter)?)),
             "STU" => Element::Instruction(Instruction::STU(do_type2(&mut iter)?)),
             "STS" => Element::Instruction(Instruction::STS(do_type2(&mut iter)?)),
+            "SUBA" => Element::Instruction(Instruction::SUBA(do_type1(&mut iter)?)),
+            "SUBB" => Element::Instruction(Instruction::SUBB(do_type1(&mut iter)?)),
+            "SUBD" => Element::Instruction(Instruction::SUBD(do_type1(&mut iter)?)),
             "SWI" => Element::Instruction(Instruction::SWI),
             "SWI2" => Element::Instruction(Instruction::SWI2),
             "SWI3" => Element::Instruction(Instruction::SWI3),
@@ -296,6 +325,24 @@ fn do_typepspl(stack: Stack, tokens: &mut std::slice::Iter<Token>) -> Result<Typ
         Ok(Typepspl { registers })
     } else {
         Err("Expected register name in PSH/PUL".to_string())
+    }
+}
+
+pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
+    tokens: &mut std::slice::Iter<Token>,
+) -> Result<Type1<T>, String> {
+    if let Some(Token::Hash) = tokens.next() {
+        if let Some(Token::Unsigned(value)) = tokens.next() {
+            // If T is only ever u8 or u16, this makes the mismatch go away.
+            // If the IntoBytes trait provided a conversion API we could use that instead of TryFrom<u16>.
+            let imm = T::try_from(*value)
+                .map_err(|_| "Immediate value not valid for Type1 operand type".to_string())?;
+            Ok(Type1::IMM(imm))
+        } else {
+            Err("Expected unsigned value after # in Type1 operand".to_string())
+        }
+    } else {
+        Err("Expected # before immediate value in Type1 operand".to_string())
     }
 }
 
