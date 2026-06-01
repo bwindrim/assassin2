@@ -339,6 +339,49 @@ fn do_indexed(value: &u16, tokens: &mut std::slice::Iter<Token>) -> Option<Index
     unimplemented!()
 }
 
+fn parse_memory_operand(
+    token: &Token,
+    tokens: &mut std::slice::Iter<Token>,
+) -> Result<MemoryOperand, String> {
+    // Implementation for parsing a Type1 operand
+    match token {
+        Token::LessThan => {
+            if let Some(Token::Unsigned(value)) = tokens.next() {
+                if *value <= 255 {
+                    Ok(MemoryOperand::DIR(*value as u8))
+                } else {
+                    Err("Direct page address too large for 8-bit offset".to_string())
+                }
+            } else {
+                Err("Expected unsigned value after < in memory operand".to_string())
+            }
+        }
+        Token::GreaterThan => {
+            if let Some(Token::Unsigned(value)) = tokens.next() {
+                Ok(MemoryOperand::EXT(*value))
+            } else {
+                Err("Expected unsigned value after > in memory operand".to_string())
+            }
+        }
+        Token::Unsigned(value) => {
+            if let Some(ind) = do_indexed(value, tokens) {
+                Ok(MemoryOperand::IND(ind))
+            } else {
+                Ok(MemoryOperand::EXT(*value))
+            }
+        }
+        Token::OpenBracket => {
+            let ind = do_indexed_indirect(tokens)?;
+            if let Some(Token::CloseBracket) = tokens.next() {
+                Ok(MemoryOperand::IND(ind))
+            } else {
+                Err("Expected ] at end of indexed indirect operand".to_string())
+            }
+        }
+        _ => Err("unexpected memory operand".to_string()),
+    }
+}
+
 pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
     tokens: &mut std::slice::Iter<Token>,
 ) -> Result<Type1<T>, String> {
@@ -351,75 +394,23 @@ pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
                     .map_err(|_| "Immediate value not valid for Type1 operand type".to_string())?;
                 Ok(Type1::IMM(imm))
             } else {
-                Err("Expected unsigned value after # in Type1 operand".to_string())
+                Err("Expected unsigned value after # in immediate operand".to_string())
             }
         }
-        Some(Token::LessThan) => {
-            if let Some(Token::Unsigned(value)) = tokens.next() {
-                if *value <= 255 {
-                    Ok(Type1::MEM(MemoryOperand::DIR(*value as u8)))
-                } else {
-                    Err("Direct page address too large for 8-bit offset".to_string())
-                }
-            } else {
-                Err("Expected unsigned value after < in Type1 operand".to_string())
-            }
-        }
-        Some(Token::GreaterThan) => {
-            if let Some(Token::Unsigned(value)) = tokens.next() {
-                Ok(Type1::MEM(MemoryOperand::EXT(*value)))
-            } else {
-                Err("Expected unsigned value after > in Type1 operand".to_string())
-            }
-        }
-        Some(Token::Unsigned(value)) => {
-            if let Some(ind) = do_indexed(value, tokens) {
-                Ok(Type1::MEM(MemoryOperand::IND(ind)))
-            } else {
-                Ok(Type1::MEM(MemoryOperand::EXT(*value)))
-            }
-        }
-        Some(Token::OpenBracket) => {
-            let ind = do_indexed_indirect(tokens)?;
-            if let Some(Token::CloseBracket) = tokens.next() {
-                Ok(Type1::MEM(MemoryOperand::IND(ind)))
-            } else {
-                Err("Expected ] at end of indexed indirect operand".to_string())
-            }
-        }
-        _ => Err("Expected unsigned value in Type1 operand".to_string()),
+        Some(token) => Ok(Type1::MEM(parse_memory_operand(token, tokens)?)),
+        None => Err("Expected immediate or memory operand".to_string()),
     }
 }
 
 pub fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
-    match tokens.next() {
-        Some(Token::LessThan) => {
-            if let Some(Token::Unsigned(value)) = tokens.next() {
-                if *value <= 255 {
-                    Ok(Type2 {
-                        operand: MemoryOperand::DIR(*value as u8),
-                    })
-                } else {
-                    Err("Direct page address too large for 8-bit offset".to_string())
-                }
-            } else {
-                Err("Expected unsigned value after < in Type2 operand".to_string())
-            }
-        }
-        Some(Token::GreaterThan) => {
-            if let Some(Token::Unsigned(value)) = tokens.next() {
-                Ok(Type2 {
-                    operand: MemoryOperand::EXT(*value),
-                })
-            } else {
-                Err("Expected unsigned value after > in Type2 operand".to_string())
-            }
-        }
-        Some(Token::Unsigned(value)) => Ok(Type2 {
-            operand: MemoryOperand::EXT(*value),
-        }),
-        _ => Err("Expected unsigned value in Type2 operand".to_string()),
-    }
+    Ok(Type2 {
+        operand: parse_memory_operand(
+            tokens
+                .next()
+                .ok_or("Expected memory operand")?,
+            tokens,
+        )?,
+    })
 }
 
 pub fn recognise_line(tokens: &[Token]) -> Result<Line, String> {
