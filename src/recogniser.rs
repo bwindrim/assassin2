@@ -343,7 +343,7 @@ fn parse_memory_operand(
     token: &Token,
     tokens: &mut std::slice::Iter<Token>,
 ) -> Result<MemoryOperand, String> {
-    // Implementation for parsing a Type1 operand
+    // Implementation for parsing a memory operand
     match token {
         Token::LessThan => {
             if let Some(Token::Unsigned(value)) = tokens.next() {
