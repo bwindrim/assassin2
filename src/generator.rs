@@ -86,6 +86,14 @@ fn encode_type0(opcode: u16) -> Vec<u8> {
     }
 }
 
+fn encode_memory_operand(operand: &MemoryOperand) -> Vec<u8> {
+    match operand {
+        MemoryOperand::DIR(addr) => vec![*addr],
+        MemoryOperand::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
+        MemoryOperand::IND(indirect) => encode_indexed_indirect(&indirect),
+    }
+}
+
 fn encode_type1<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
     fn encode_type1_opcode<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -106,11 +114,7 @@ fn encode_type1<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8>
     fn encode_type1_operand<T: IntoBytes + Copy>(operand: &Type1<T>) -> Vec<u8> {
         match operand {
             Type1::IMM(value) => gen_bytes::<T>(*value),
-            Type1::MEM(operand) => match operand {
-                MemoryOperand::DIR(addr) => vec![*addr],
-                MemoryOperand::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
-                MemoryOperand::IND(indirect) => encode_indexed_indirect(indirect),
-            },
+            Type1::MEM(operand) => encode_memory_operand(operand),
         }
     }
 
@@ -131,14 +135,6 @@ fn encode_type2(opcode: u16, operand: &Type2) -> Vec<u8> {
             MemoryOperand::IND(_) => vec![(opcode as u8) | 0x60],
         });
         bytes
-    }
-
-    fn encode_memory_operand(operand: &MemoryOperand) -> Vec<u8> {
-        match operand {
-            MemoryOperand::DIR(addr) => vec![*addr],
-            MemoryOperand::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
-            MemoryOperand::IND(indirect) => encode_indexed_indirect(&indirect),
-        }
     }
 
     let mut bytes = encode_type2_opcode(opcode, operand);

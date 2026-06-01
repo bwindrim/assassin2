@@ -176,4 +176,3 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
     }
     Ok(tokens)
 }
-

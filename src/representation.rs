@@ -34,8 +34,7 @@ impl IntoBytes for u16 {
 // The encoding of the instruction is handled separately in the encode_instruction function, which takes care of generating the correct opcode and operand bytes based on the instruction format and addressing mode.
 // This separation of concerns makes the code more modular and easier to understand.
 
-#[derive(Debug)]
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub enum PushPullRegister {
     A,
     B,
@@ -162,8 +161,7 @@ pub enum Typebr {
     UNRESOLVED(String),
 }
 
-#[derive(Debug)]
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Stack {
     S,
     U,

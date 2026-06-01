@@ -1,7 +1,8 @@
 use crate::parser::Token;
 use crate::representation::{
-    Directive, Element, IndexedIndirect, Instruction, IntoBytes, Line, PushPullRegister, Stack,
-    TfrExgRegister8, TfrExgRegister16, Type1, Type2, Typecc, Typepspl, Typext, MemoryOperand,
+    Directive, Element, IndexedIndirect, Instruction, IntoBytes, Line, MemoryOperand,
+    PushPullRegister, Stack, TfrExgRegister8, TfrExgRegister16, Type1, Type2, Typecc, Typepspl,
+    Typext,
 };
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -395,7 +396,9 @@ pub fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
         Some(Token::LessThan) => {
             if let Some(Token::Unsigned(value)) = tokens.next() {
                 if *value <= 255 {
-                    Ok(Type2{operand: MemoryOperand::DIR(*value as u8)})
+                    Ok(Type2 {
+                        operand: MemoryOperand::DIR(*value as u8),
+                    })
                 } else {
                     Err("Direct page address too large for 8-bit offset".to_string())
                 }
@@ -405,12 +408,16 @@ pub fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
         }
         Some(Token::GreaterThan) => {
             if let Some(Token::Unsigned(value)) = tokens.next() {
-                Ok(Type2{operand: MemoryOperand::EXT(*value)})
+                Ok(Type2 {
+                    operand: MemoryOperand::EXT(*value),
+                })
             } else {
                 Err("Expected unsigned value after > in Type2 operand".to_string())
             }
         }
-        Some(Token::Unsigned(value)) => Ok(Type2{operand: MemoryOperand::EXT(*value)}),
+        Some(Token::Unsigned(value)) => Ok(Type2 {
+            operand: MemoryOperand::EXT(*value),
+        }),
         _ => Err("Expected unsigned value in Type2 operand".to_string()),
     }
 }
