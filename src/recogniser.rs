@@ -1,7 +1,7 @@
 use crate::parser::Token;
 use crate::representation::{
-    Directive, Element, Instruction, IntoBytes, Line, PushPullRegister, Stack, TfrExgRegister8,
-    TfrExgRegister16, Type1, Type2, Typecc, Typepspl, Typext,
+    Directive, Element, IndexedIndirect, Instruction, IntoBytes, Line, PushPullRegister, Stack,
+    TfrExgRegister8, TfrExgRegister16, Type1, Type2, Typecc, Typepspl, Typext, MemoryOperand,
 };
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -328,6 +328,16 @@ fn do_typepspl(stack: Stack, tokens: &mut std::slice::Iter<Token>) -> Result<Typ
     }
 }
 
+fn do_indexed_indirect(tokens: &mut std::slice::Iter<Token>) -> Result<IndexedIndirect, String> {
+    // Implementation for parsing indexed indirect addressing
+    unimplemented!()
+}
+
+fn do_indexed(value: &u16, tokens: &mut std::slice::Iter<Token>) -> Option<IndexedIndirect> {
+    // Implementation for parsing indexed indirect addressing
+    unimplemented!()
+}
+
 pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
     tokens: &mut std::slice::Iter<Token>,
 ) -> Result<Type1<T>, String> {
@@ -342,11 +352,11 @@ pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
             } else {
                 Err("Expected unsigned value after # in Type1 operand".to_string())
             }
-        },
+        }
         Some(Token::LessThan) => {
             if let Some(Token::Unsigned(value)) = tokens.next() {
                 if *value <= 255 {
-                    Ok(Type1::DIR(*value as u8))
+                    Ok(Type1::MEM(MemoryOperand::DIR(*value as u8)))
                 } else {
                     Err("Direct page address too large for 8-bit offset".to_string())
                 }
@@ -356,12 +366,26 @@ pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
         }
         Some(Token::GreaterThan) => {
             if let Some(Token::Unsigned(value)) = tokens.next() {
-                Ok(Type1::EXT(*value))
+                Ok(Type1::MEM(MemoryOperand::EXT(*value)))
             } else {
                 Err("Expected unsigned value after > in Type1 operand".to_string())
             }
         }
-        Some(Token::Unsigned(value)) => Ok(Type1::EXT(*value)),
+        Some(Token::Unsigned(value)) => {
+            if let Some(ind) = do_indexed(value, tokens) {
+                Ok(Type1::MEM(MemoryOperand::IND(ind)))
+            } else {
+                Ok(Type1::MEM(MemoryOperand::EXT(*value)))
+            }
+        }
+        Some(Token::OpenBracket) => {
+            let ind = do_indexed_indirect(tokens)?;
+            if let Some(Token::CloseBracket) = tokens.next() {
+                Ok(Type1::MEM(MemoryOperand::IND(ind)))
+            } else {
+                Err("Expected ] at end of indexed indirect operand".to_string())
+            }
+        }
         _ => Err("Expected unsigned value in Type1 operand".to_string()),
     }
 }
@@ -371,7 +395,7 @@ pub fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
         Some(Token::LessThan) => {
             if let Some(Token::Unsigned(value)) = tokens.next() {
                 if *value <= 255 {
-                    Ok(Type2::DIR(*value as u8))
+                    Ok(Type2{operand: MemoryOperand::DIR(*value as u8)})
                 } else {
                     Err("Direct page address too large for 8-bit offset".to_string())
                 }
@@ -381,12 +405,12 @@ pub fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
         }
         Some(Token::GreaterThan) => {
             if let Some(Token::Unsigned(value)) = tokens.next() {
-                Ok(Type2::EXT(*value))
+                Ok(Type2{operand: MemoryOperand::EXT(*value)})
             } else {
                 Err("Expected unsigned value after > in Type2 operand".to_string())
             }
         }
-        Some(Token::Unsigned(value)) => Ok(Type2::EXT(*value)),
+        Some(Token::Unsigned(value)) => Ok(Type2{operand: MemoryOperand::EXT(*value)}),
         _ => Err("Expected unsigned value in Type2 operand".to_string()),
     }
 }

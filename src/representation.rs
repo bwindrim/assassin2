@@ -131,25 +131,26 @@ pub enum IndexedIndirect {
     ExtInd(u16),
 }
 
-// Type1 instructions have a single operand,
-// which can be an immediate value or a direct, extended,
-// or indexed/indirect memory location.
-// The type parameter T is used to distinguish between 8-bit and 16-bit immediate values.
 #[derive(Debug)]
-pub enum Type1<T: IntoBytes> {
-    IMM(T),
+pub enum MemoryOperand {
     DIR(u8),
     EXT(u16),
     IND(IndexedIndirect),
 }
 
-// Type2 instructions have a single operand,
-// which can be a direct, extended, or indexed/indirect memory location.
+// Type1 instructions have a source operand, which can be an immediate value or a memory location.
+// The type parameter T is used to distinguish between 8-bit and 16-bit immediate values.
 #[derive(Debug)]
-pub enum Type2 {
-    DIR(u8),
-    EXT(u16),
-    IND(IndexedIndirect),
+pub enum Type1<T: IntoBytes> {
+    IMM(T),
+    MEM(MemoryOperand),
+}
+
+// Type2 instructions have a single destination operand, which is usually also a source operand,
+// and is always a memory location.
+#[derive(Debug)]
+pub struct Type2 {
+    pub operand: MemoryOperand,
 }
 
 // Typebr instructions have a single operand,
