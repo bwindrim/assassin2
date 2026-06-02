@@ -1,4 +1,9 @@
-use crate::parser::Token;
+use std::env;
+use std::fs::File;
+use std::io::{self, BufRead};
+use std::path::Path;
+
+use crate::parser::{Token, tokenize};
 use crate::representation::{
     Directive, Element, IndexedIndirect, Instruction, IntoBytes, Line, MemoryOperand,
     PushPullRegister, Stack, TfrExgRegister8, TfrExgRegister16, Type1, Type2, Typebr, Typecc,
@@ -499,7 +504,10 @@ impl Recogniser {
 
     fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
         Ok(Type2 {
-            operand: Self::parse_memory_operand(tokens.next().ok_or("Expected memory operand")?, tokens)?,
+            operand: Self::parse_memory_operand(
+                tokens.next().ok_or("Expected memory operand")?,
+                tokens,
+            )?,
         })
     }
 
@@ -568,5 +576,50 @@ impl Recogniser {
             Ok(Some(element)) => Ok(Line { element, comment }),
             Err(e) => Err(e),
         }
+    }
+
+    // The output is wrapped in a Result to allow matching on errors.
+    // Returns an Iterator to the Reader of the lines of the file.
+    fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+    where
+        P: AsRef<Path>,
+    {
+        let file = File::open(filename);
+        match file {
+            Ok(file) => Ok(io::BufReader::new(file).lines()),
+            Err(e) => {
+                println!("Error reading file: {}", e);
+                Err(e)
+            }
+        }
+    }
+
+    pub fn parse(&mut self, filename: &str) -> std::io::Result<()> {
+        let path = env::current_dir()?;
+        println!("The current directory is {}", path.display());
+
+        // File <filename> must exist in the current path
+        if let Ok(lines) = Self::read_lines(filename) {
+            // Consumes the iterator, returns an (Optional) String
+            for line in lines.map_while(Result::ok) {
+                println!("{}", line);
+                {
+                    let line: &str = &line;
+                    let result = tokenize(line);
+                    match result {
+                        Ok(tokens) => {
+                            println!("{:?}", tokens);
+                            let line = self.recognise_line(&tokens);
+                            match line {
+                                Ok(line) => println!("Recognised line: {:?}", line),
+                                Err(e) => println!("Recognition error: {}", e),
+                            }
+                        }
+                        Err(e) => println!("Tokenizer error: {:?}", e),
+                    }
+                };
+            }
+        }
+        Ok(())
     }
 }
