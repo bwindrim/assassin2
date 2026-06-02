@@ -8,34 +8,9 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use parser::tokenize;
-use generator::*;
-use representation::*;
 
 fn main() {
-    let mut seg = Segment {
-        name: "CODE".to_string(),
-        elements: vec![
-            Element::Instruction(Instruction::ABX),
-            Element::Instruction(Instruction::ADDA(Type1::IMM(42))),
-            Element::Directive(Directive::DB(vec![1, 2, 3])),
-            Element::Directive(Directive::DW(vec![0x1234, 0x5678])),
-            Element::Directive(Directive::DS(16)),
-        ],
-    };
-    let instr = Instruction::ADDA(Type1::IMM(42));
-    println!("{:?} -> {:?}", instr, encode_instruction(&instr));
-    seg.elements.push(Element::Instruction(instr));
-    let instr = Instruction::ADDD(Type1::IMM(1042));
-    println!("{:?} -> {:?}", instr, encode_instruction(&instr));
-    seg.elements.push(Element::Instruction(instr));
-    let instr = Instruction::EXG(Typext::from_tfr_exg_registers8(
-        TfrExgRegister8::A,
-        TfrExgRegister8::B,
-    ));
-    println!("{:?} -> {:?}", instr, encode_instruction(&instr));
-    seg.elements.push(Element::Instruction(instr));
-    println!("{:?}", seg);
-
+    println!("Assassin 6809 assembler, V2.0");
     let _ = parse("tst/boot.a");
     println!("Done");
 }

@@ -2,7 +2,7 @@ use crate::parser::Token;
 use crate::representation::{
     Directive, Element, IndexedIndirect, Instruction, IntoBytes, Line, MemoryOperand,
     PushPullRegister, Stack, TfrExgRegister8, TfrExgRegister16, Type1, Type2, Typecc, Typepspl,
-    Typext,
+    Typext, Typebr,
 };
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -113,6 +113,27 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "ASRA" => Element::Instruction(Instruction::ASRA),
             "ASRB" => Element::Instruction(Instruction::ASRB),
             "ASR" => Element::Instruction(Instruction::ASR(do_type2(&mut iter)?)),
+            "BITA" => Element::Instruction(Instruction::BITA(do_type1(&mut iter)?)),
+            "BITB" => Element::Instruction(Instruction::BITB(do_type1(&mut iter)?)),
+            "BCC" => Element::Instruction(Instruction::BCC(do_typebr(&mut iter)?)),
+            "BCS" => Element::Instruction(Instruction::BCS(do_typebr(&mut iter)?)),
+            "BEQ" => Element::Instruction(Instruction::BEQ(do_typebr(&mut iter)?)),
+            "BGE" => Element::Instruction(Instruction::BGE(do_typebr(&mut iter)?)),
+            "BGT" => Element::Instruction(Instruction::BGT(do_typebr(&mut iter)?)),
+            "BHI" => Element::Instruction(Instruction::BHI(do_typebr(&mut iter)?)),
+            "BHS" => Element::Instruction(Instruction::BHS(do_typebr(&mut iter)?)),
+            "BLE" => Element::Instruction(Instruction::BLE(do_typebr(&mut iter)?)),
+            "BLO" => Element::Instruction(Instruction::BLO(do_typebr(&mut iter)?)),
+            "BLS" => Element::Instruction(Instruction::BLS(do_typebr(&mut iter)?)),
+            "BLT" => Element::Instruction(Instruction::BLT(do_typebr(&mut iter)?)),
+            "BMI" => Element::Instruction(Instruction::BMI(do_typebr(&mut iter)?)),
+            "BNE" => Element::Instruction(Instruction::BNE(do_typebr(&mut iter)?)),
+            "BPL" => Element::Instruction(Instruction::BPL(do_typebr(&mut iter)?)),
+            "BRA" => Element::Instruction(Instruction::BRA(do_typebr(&mut iter)?)),
+            "BRN" => Element::Instruction(Instruction::BRN(do_typebr(&mut iter)?)),
+            "BSR" => Element::Instruction(Instruction::BSR(do_typebr(&mut iter)?)),
+            "BVC" => Element::Instruction(Instruction::BVC(do_typebr(&mut iter)?)),
+            "BVS" => Element::Instruction(Instruction::BVS(do_typebr(&mut iter)?)),
             "CLC" => Element::Instruction(Instruction::CLC),
             "CLF" => Element::Instruction(Instruction::CLF),
             "CLI" => Element::Instruction(Instruction::CLI),
@@ -142,6 +163,25 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "INC" => Element::Instruction(Instruction::INC(do_type2(&mut iter)?)),
             "JMP" => Element::Instruction(Instruction::JMP(do_type2(&mut iter)?)),
             "JSR" => Element::Instruction(Instruction::JSR(do_type2(&mut iter)?)),
+            "LBCC" => Element::Instruction(Instruction::BCC(do_typelbr(&mut iter)?)),
+            "LBCS" => Element::Instruction(Instruction::BCS(do_typelbr(&mut iter)?)),
+            "LBEQ" => Element::Instruction(Instruction::BEQ(do_typelbr(&mut iter)?)),
+            "LBGE" => Element::Instruction(Instruction::BGE(do_typelbr(&mut iter)?)),
+            "LBGT" => Element::Instruction(Instruction::BGT(do_typelbr(&mut iter)?)),
+            "LBHI" => Element::Instruction(Instruction::BHI(do_typelbr(&mut iter)?)),
+            "LBHS" => Element::Instruction(Instruction::BHS(do_typelbr(&mut iter)?)),
+            "LBLE" => Element::Instruction(Instruction::BLE(do_typelbr(&mut iter)?)),
+            "LBLO" => Element::Instruction(Instruction::BLO(do_typelbr(&mut iter)?)),
+            "LBLS" => Element::Instruction(Instruction::BLS(do_typelbr(&mut iter)?)),
+            "LBLT" => Element::Instruction(Instruction::BLT(do_typelbr(&mut iter)?)),
+            "LBMI" => Element::Instruction(Instruction::BMI(do_typelbr(&mut iter)?)),
+            "LBNE" => Element::Instruction(Instruction::BNE(do_typelbr(&mut iter)?)),
+            "LBPL" => Element::Instruction(Instruction::BPL(do_typelbr(&mut iter)?)),
+            "LBRA" => Element::Instruction(Instruction::BRA(do_typelbr(&mut iter)?)),
+            "LBRN" => Element::Instruction(Instruction::BRN(do_typelbr(&mut iter)?)),
+            "LBSR" => Element::Instruction(Instruction::BSR(do_typelbr(&mut iter)?)),
+            "LBVC" => Element::Instruction(Instruction::BVC(do_typelbr(&mut iter)?)),
+            "LBVS" => Element::Instruction(Instruction::BVS(do_typelbr(&mut iter)?)),
             "LDA" => Element::Instruction(Instruction::LDA(do_type1(&mut iter)?)),
             "LDB" => Element::Instruction(Instruction::LDB(do_type1(&mut iter)?)),
             "LDD" => Element::Instruction(Instruction::LDD(do_type1(&mut iter)?)),
@@ -181,6 +221,25 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
             "RTS" => Element::Instruction(Instruction::RTS),
             "SBCA" => Element::Instruction(Instruction::SBCA(do_type1(&mut iter)?)),
             "SBCB" => Element::Instruction(Instruction::SBCB(do_type1(&mut iter)?)),
+            "SBCC" => Element::Instruction(Instruction::BCC(do_typesbr(&mut iter)?)),
+            "SBCS" => Element::Instruction(Instruction::BCS(do_typesbr(&mut iter)?)),
+            "SBEQ" => Element::Instruction(Instruction::BEQ(do_typesbr(&mut iter)?)),
+            "SBGE" => Element::Instruction(Instruction::BGE(do_typesbr(&mut iter)?)),
+            "SBGT" => Element::Instruction(Instruction::BGT(do_typesbr(&mut iter)?)),
+            "SBHI" => Element::Instruction(Instruction::BHI(do_typesbr(&mut iter)?)),
+            "SBHS" => Element::Instruction(Instruction::BHS(do_typesbr(&mut iter)?)),
+            "SBLE" => Element::Instruction(Instruction::BLE(do_typesbr(&mut iter)?)),
+            "SLO" => Element::Instruction(Instruction::BLO(do_typesbr(&mut iter)?)),
+            "SLS" => Element::Instruction(Instruction::BLS(do_typesbr(&mut iter)?)),
+            "SLT" => Element::Instruction(Instruction::BLT(do_typesbr(&mut iter)?)),
+            "SBMI" => Element::Instruction(Instruction::BMI(do_typesbr(&mut iter)?)),
+            "SBNE" => Element::Instruction(Instruction::BNE(do_typesbr(&mut iter)?)),
+            "SBPL" => Element::Instruction(Instruction::BPL(do_typesbr(&mut iter)?)),
+            "SBRA" => Element::Instruction(Instruction::BRA(do_typesbr(&mut iter)?)),
+            "SBRN" => Element::Instruction(Instruction::BRN(do_typesbr(&mut iter)?)),
+            "SBSR" => Element::Instruction(Instruction::BSR(do_typesbr(&mut iter)?)),
+            "SBVC" => Element::Instruction(Instruction::BVC(do_typesbr(&mut iter)?)),
+            "SBVS" => Element::Instruction(Instruction::BVS(do_typesbr(&mut iter)?)),
             "SEC" => Element::Instruction(Instruction::SEC),
             "SEF" => Element::Instruction(Instruction::SEF),
             "SEI" => Element::Instruction(Instruction::SEI),
@@ -364,25 +423,25 @@ fn parse_memory_operand(
             }
         }
         Token::Unsigned(value) => {
-            if let Some(ind) = do_indexed(value, tokens) {
-                Ok(MemoryOperand::IND(ind))
-            } else {
+//            if let Some(ind) = do_indexed(value, tokens) {
+//                Ok(MemoryOperand::IND(ind))
+//            } else {
                 Ok(MemoryOperand::EXT(*value))
-            }
+//            }
         }
         Token::OpenBracket => {
-            let ind = do_indexed_indirect(tokens)?;
-            if let Some(Token::CloseBracket) = tokens.next() {
-                Ok(MemoryOperand::IND(ind))
-            } else {
+//            let ind = do_indexed_indirect(tokens)?;
+//            if let Some(Token::CloseBracket) = tokens.next() {
+//                Ok(MemoryOperand::IND(ind))
+//            } else {
                 Err("Expected ] at end of indexed indirect operand".to_string())
-            }
+//            }
         }
         _ => Err("unexpected memory operand".to_string()),
     }
 }
 
-pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
+fn do_type1<T: IntoBytes + TryFrom<u16>>(
     tokens: &mut std::slice::Iter<Token>,
 ) -> Result<Type1<T>, String> {
     match tokens.next() {
@@ -402,7 +461,7 @@ pub fn do_type1<T: IntoBytes + TryFrom<u16>>(
     }
 }
 
-pub fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
+fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
     Ok(Type2 {
         operand: parse_memory_operand(
             tokens
@@ -411,6 +470,49 @@ pub fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
             tokens,
         )?,
     })
+}
+
+fn do_typebr(tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
+    match tokens.next() {
+        Some(Token::Unsigned(value)) => {
+            if *value <= 127 {
+                Ok(Typebr::SHORT(*value as i8))
+            } else if *value <= 32767 {
+                Ok(Typebr::LONG(*value as i16))
+            } else {
+                Err("Branch target offset too large".to_string())
+            }
+        }
+        Some(Token::Name(label)) => Ok(Typebr::UNRESOLVED(label.clone())),
+        _ => Err("Expected unsigned value or label in branch operand".to_string()),
+    }
+}
+
+fn do_typesbr(tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
+    match tokens.next() {
+        Some(Token::Unsigned(value)) => {
+            if *value <= 127 {
+                Ok(Typebr::SHORT(*value as i8))
+            } else {
+                Err("Branch target offset too large".to_string())
+            }
+        }
+        _ => Err("Expected unsigned value in short branch operand".to_string()),
+    }
+}
+
+fn do_typelbr(tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
+    match tokens.next() {
+        Some(Token::Unsigned(value)) => {
+            if *value <= 32767 {
+                Ok(Typebr::LONG(*value as i16))
+            } else {
+                Err("Branch target offset too large".to_string())
+            }
+        }
+        Some(Token::Name(label)) => Ok(Typebr::UNRESOLVED(label.clone())),
+        _ => Err("Expected unsigned value or label in branch operand".to_string()),
+    }
 }
 
 pub fn recognise_line(tokens: &[Token]) -> Result<Line, String> {
