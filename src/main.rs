@@ -2,6 +2,7 @@ pub mod parser;
 pub mod generator;
 pub mod representation;
 pub mod recogniser;
+pub mod namelist;
 
 use std::env;
 use std::fs::File;
@@ -11,7 +12,9 @@ use parser::tokenize;
 
 fn main() {
     println!("Assassin 6809 assembler, V2.0");
-    let _ = parse("tst/boot.a");
+    let mut namelist = namelist::Namelist::new();
+    let _ = parse("tst/boot.a", &mut namelist);
+    println!("Namelist: {:?}", namelist);
     println!("Done");
 }
 
@@ -31,7 +34,7 @@ where
     }
 }
 
-fn parse(filename: &str) -> std::io::Result<()> {
+fn parse(filename: &str, namelist: &mut namelist::Namelist) -> std::io::Result<()> {
     let path = env::current_dir()?;
     println!("The current directory is {}", path.display());
 
@@ -46,7 +49,7 @@ fn parse(filename: &str) -> std::io::Result<()> {
                 match result {
                     Ok(tokens) => {
                         println!("{:?}", tokens);
-                        let line = recogniser::recognise_line(&tokens);
+                        let line = recogniser::recognise_line(&tokens, namelist);
                         match line {
                             Ok(line) => println!("Recognised line: {:?}", line) ,
                             Err(e) => println!("Recognition error: {}", e),

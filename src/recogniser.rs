@@ -4,10 +4,11 @@ use crate::representation::{
     PushPullRegister, Stack, TfrExgRegister8, TfrExgRegister16, Type1, Type2, Typecc, Typepspl,
     Typext, Typebr,
 };
+use crate::namelist::Namelist;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
+fn recognise(tokens: &[Token], namelist: &mut Namelist) -> Result<Option<Element>, String> {
     // This function will take a slice of tokens and attempt to recognise them as instructions or directives.
     // It will return a Result Element containing either the recognised instruction/directive
     // or an error if the tokens are not valid.
@@ -33,7 +34,8 @@ fn recognise(tokens: &[Token]) -> Result<Option<Element>, String> {
         Some(Token::Colon) => {
             next_token = iter.next(); // skip to the next token
             if let Some(name) = label {
-                // ToDo: define label
+                // Define label.
+                namelist.insert(name.clone(), 0); // insert the label into the namelist
                 println!("Label: {}", name);
             } else {
                 return Err("Unexpected : at start of line".to_string());
@@ -515,7 +517,7 @@ fn do_typelbr(tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
     }
 }
 
-pub fn recognise_line(tokens: &[Token]) -> Result<Line, String> {
+pub fn recognise_line(tokens: &[Token], namelist: &mut Namelist) -> Result<Line, String> {
     // The line may end with a comment, so we check for that and separate it out if present.
     let (comment, tokens) = if let Some(Token::Comment(comment_string)) = tokens.last() {
         // The last token is a comment, so we take it out of the token slice and store it separately.
@@ -529,7 +531,7 @@ pub fn recognise_line(tokens: &[Token]) -> Result<Line, String> {
     };
     // Now we attempt to recognise the remaining tokens as an instruction or directive, and return a Line
     // containing the recognised element and the comment (if any).
-    match recognise(tokens) {
+    match recognise(tokens, namelist) {
         Ok(None) => Ok(Line {
             element: Element::Directive(Directive::BLANK),
             comment,
