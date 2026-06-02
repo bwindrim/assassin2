@@ -17,22 +17,26 @@ use std::convert::TryFrom;
 #[derive(Debug)]
 pub struct Recogniser {
     pc: u16,
-    labels: HashMap<String, u16>,
+    origin: Option<u16>,
+    execute_address: Option<u16>,
+    labels: HashMap<String, i32>,
 }
 
 impl Recogniser {
     pub fn new() -> Self {
         Recogniser {
             pc: 0,
+            origin: None,
+            execute_address: None,
             labels: HashMap::new(),
         }
     }
 
-    fn insert(&mut self, label: String, address: u16) {
-        self.labels.insert(label, address);
+    fn insert(&mut self, label: String, value: i32) {
+        self.labels.insert(label, value);
     }
 
-    fn get(&self, label: &str) -> Option<&u16> {
+    fn get(&self, label: &str) -> Option<&i32> {
         self.labels.get(label)
     }
 
@@ -63,7 +67,7 @@ impl Recogniser {
                 next_token = iter.next(); // skip to the next token
                 if let Some(name) = label {
                     // Define label.
-                    self.insert(name.clone(), self.pc); // insert the label into the namelist
+                    self.insert(name.clone(), self.pc as i32); // insert the label into the namelist
                     println!("Label: {}", name);
                 } else {
                     return Err("Unexpected : at start of line".to_string());
@@ -78,17 +82,30 @@ impl Recogniser {
             Some(Token::Name(mnemonic)) => match mnemonic.to_uppercase().as_str() {
                 "ORG" => match iter.next() {
                     None => return Err("Expected operand after ORG".to_string()),
-                    Some(Token::Unsigned(value)) => Element::Directive(Directive::ORG(*value)),
+                    Some(Token::Unsigned(value)) => {
+                        if None != self.origin {
+                            return Err("Multiple ORG directives".to_string());
+                        }
+                        self.origin = Some(*value);
+                        self.pc = *value; // set the program counter to the specified value
+                        Element::Directive(Directive::ORG(*value))
+                    }
                     _ => return Err("Expected unsigned value after ORG".to_string()),
                 },
                 "EXEC" => match iter.next() {
                     None => return Err("Expected operand after EXEC".to_string()),
-                    Some(Token::Unsigned(value)) => Element::Directive(Directive::EXEC(*value)),
+                    Some(Token::Unsigned(value)) => {
+                        self.execute_address = Some(*value);
+                        Element::Directive(Directive::EXEC(*value))
+                    }
                     _ => return Err("Expected unsigned value after EXEC".to_string()),
                 },
                 "EQU" => match iter.next() {
                     None => return Err("Expected operand after EQU".to_string()),
-                    Some(Token::Unsigned(value)) => Element::Directive(Directive::EQU(*value)),
+                    Some(Token::Unsigned(value)) => {
+                        self.insert(label.ok_or("EQU directive must have a name".to_string())?.clone(), *value as i32);
+                        Element::Directive(Directive::EQU(*value))
+                    }
                     _ => return Err("Expected unsigned value after EQU".to_string()),
                 },
                 "DB" => {

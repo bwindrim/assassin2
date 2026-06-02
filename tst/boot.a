@@ -1,5 +1,8 @@
 		org	$F000	; set the origin
 
+io_base		equ	$FE00	; base address of I/O registers
+stack_base	equ	$FF00	; base address of stack
+
 		ldx	#$E00
 loop1:		lda	$EFFF,x
 		sta	$EFFF,x
