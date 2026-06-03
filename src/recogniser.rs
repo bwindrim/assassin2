@@ -552,7 +552,20 @@ impl Recogniser {
                     Err("Branch target offset too large".to_string())
                 }
             }
-            Some(Token::Name(label)) => Ok(Typebr::UNRESOLVED(label.clone())),
+            Some(Token::Name(label)) => {
+                if let Some(value)  = self.get(label) {
+                    let offet = *value - self.pc as i32;
+                    if offet >= -128 && offet <= 127 {
+                        Ok(Typebr::SHORT(offet as i8))
+                    } else if offet >= -32768 && offet <= 32767 {
+                        Ok(Typebr::LONG(offet as i16))
+                    } else {
+                        Err("Branch target offset too large".to_string())
+                    }                    
+                } else {
+                    Ok(Typebr::UNRESOLVED(label.clone()))
+                }
+            }
             _ => Err("Expected unsigned value or label in branch operand".to_string()),
         }
     }

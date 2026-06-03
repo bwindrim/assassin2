@@ -35,7 +35,7 @@ dload:		ldu	#getword
 		exg	d,y
 		leay	1,y
 loop4:		leay	-1,y
-		sbeq	exit
+		beq	exit
 		ldu	#getbyte
 		exg	u,pc
 		stb	,x+
