@@ -135,6 +135,7 @@ pub enum MemoryOperand {
     DIR(u8),
     EXT(u16),
     IND(IndexedIndirect),
+    UNRESOLVED(String),
 }
 
 // Type1 instructions have a source operand, which can be an immediate value or a memory location.

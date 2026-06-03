@@ -91,6 +91,11 @@ fn encode_memory_operand(operand: &MemoryOperand) -> Vec<u8> {
         MemoryOperand::DIR(addr) => vec![*addr],
         MemoryOperand::EXT(addr) => vec![(*addr >> 8) as u8, *addr as u8],
         MemoryOperand::IND(indirect) => encode_indexed_indirect(&indirect),
+        MemoryOperand::UNRESOLVED(label) => {
+            // Placeholder for unresolved label; in a real assembler, this would be resolved later
+            println!("Warning: Unresolved memory operand '{}'", label);
+            vec![0xFF, 0xFF] // Placeholder address
+        }
     }
 }
 
@@ -104,7 +109,7 @@ fn encode_type1<T: IntoBytes + Copy>(opcode: u16, operand: &Type1<T>) -> Vec<u8>
             Type1::IMM(_) => vec![(opcode as u8) | 0x00],
             Type1::MEM(operand) => match operand {
                 MemoryOperand::DIR(_) => vec![(opcode as u8) | 0x10],
-                MemoryOperand::EXT(_) => vec![(opcode as u8) | 0x30],
+                MemoryOperand::EXT(_) | MemoryOperand::UNRESOLVED(_) => vec![(opcode as u8) | 0x30],
                 MemoryOperand::IND(_) => vec![(opcode as u8) | 0x20],
             },
         });
@@ -131,7 +136,7 @@ fn encode_type2(opcode: u16, operand: &Type2) -> Vec<u8> {
         }
         bytes.extend(match operand.operand {
             MemoryOperand::DIR(_) => vec![(opcode as u8) | 0x00],
-            MemoryOperand::EXT(_) => vec![(opcode as u8) | 0x70],
+            MemoryOperand::EXT(_) | MemoryOperand::UNRESOLVED(_) => vec![(opcode as u8) | 0x70],
             MemoryOperand::IND(_) => vec![(opcode as u8) | 0x60],
         });
         bytes
@@ -332,7 +337,7 @@ pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::BSR(operand) => encode_typebr(0x8D, operand), // Opcode for BSR
         Instruction::BVC(operand) => encode_typebr(0x28, operand), // Opcode for BVC
         Instruction::BVS(operand) => encode_typebr(0x29, operand), // Opcode for BVS
-        Instruction::SEC => encode_type0(0x1A01),                   // ORCC #$01 (set carry)
+        Instruction::SEC => encode_type0(0x1A01),                 // ORCC #$01 (set carry)
         Instruction::SEF => encode_type0(0x1A40), // ORCC #$40 (set fast interrupt disable)
         Instruction::SEI => encode_type0(0x1A10), // ORCC #$10 (set interrupt disable)
         Instruction::SEIF => encode_type0(0x1A50), // ORCC #$50 (set both interrupt disables)
