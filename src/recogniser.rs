@@ -95,6 +95,9 @@ impl Recogniser {
                 "EXEC" => match iter.next() {
                     None => return Err("Expected operand after EXEC".to_string()),
                     Some(Token::Unsigned(value)) => {
+                        if None != self.execute_address {
+                            return Err("Multiple EXEC directives".to_string());
+                        }
                         self.execute_address = Some(*value);
                         Element::Directive(Directive::EXEC(*value))
                     }
@@ -103,7 +106,12 @@ impl Recogniser {
                 "EQU" => match iter.next() {
                     None => return Err("Expected operand after EQU".to_string()),
                     Some(Token::Unsigned(value)) => {
-                        self.insert(label.ok_or("EQU directive must have a name".to_string())?.clone(), *value as i32);
+                        self.insert(
+                            label
+                                .ok_or("EQU directive must have a name".to_string())?
+                                .clone(),
+                            *value as i32,
+                        );
                         Element::Directive(Directive::EQU(*value))
                     }
                     _ => return Err("Expected unsigned value after EQU".to_string()),
@@ -146,179 +154,179 @@ impl Recogniser {
                     _ => return Err("Expected unsigned value after DS".to_string()),
                 },
                 "ABX" => Element::Instruction(Instruction::ABX),
-                "ADCA" => Element::Instruction(Instruction::ADCA(Self::do_type1(&mut iter)?)),
-                "ADCB" => Element::Instruction(Instruction::ADCB(Self::do_type1(&mut iter)?)),
-                "ADDA" => Element::Instruction(Instruction::ADDA(Self::do_type1(&mut iter)?)),
-                "ADDB" => Element::Instruction(Instruction::ADDB(Self::do_type1(&mut iter)?)),
-                "ADDD" => Element::Instruction(Instruction::ADDD(Self::do_type1(&mut iter)?)),
-                "ANDA" => Element::Instruction(Instruction::ANDA(Self::do_type1(&mut iter)?)),
-                "ANDB" => Element::Instruction(Instruction::ANDB(Self::do_type1(&mut iter)?)),
-                "ANDCC" => Element::Instruction(Instruction::ANDCC(Self::do_typecc(&mut iter)?)),
+                "ADCA" => Element::Instruction(Instruction::ADCA(self.do_type1(&mut iter)?)),
+                "ADCB" => Element::Instruction(Instruction::ADCB(self.do_type1(&mut iter)?)),
+                "ADDA" => Element::Instruction(Instruction::ADDA(self.do_type1(&mut iter)?)),
+                "ADDB" => Element::Instruction(Instruction::ADDB(self.do_type1(&mut iter)?)),
+                "ADDD" => Element::Instruction(Instruction::ADDD(self.do_type1(&mut iter)?)),
+                "ANDA" => Element::Instruction(Instruction::ANDA(self.do_type1(&mut iter)?)),
+                "ANDB" => Element::Instruction(Instruction::ANDB(self.do_type1(&mut iter)?)),
+                "ANDCC" => Element::Instruction(Instruction::ANDCC(self.do_typecc(&mut iter)?)),
                 "ASLA" => Element::Instruction(Instruction::ASLA),
                 "ASLB" => Element::Instruction(Instruction::ASLB),
-                "ASL" => Element::Instruction(Instruction::ASL(Self::do_type2(&mut iter)?)),
+                "ASL" => Element::Instruction(Instruction::ASL(self.do_type2(&mut iter)?)),
                 "ASRA" => Element::Instruction(Instruction::ASRA),
                 "ASRB" => Element::Instruction(Instruction::ASRB),
-                "ASR" => Element::Instruction(Instruction::ASR(Self::do_type2(&mut iter)?)),
-                "BITA" => Element::Instruction(Instruction::BITA(Self::do_type1(&mut iter)?)),
-                "BITB" => Element::Instruction(Instruction::BITB(Self::do_type1(&mut iter)?)),
-                "BCC" => Element::Instruction(Instruction::BCC(Self::do_typebr(&mut iter)?)),
-                "BCS" => Element::Instruction(Instruction::BCS(Self::do_typebr(&mut iter)?)),
-                "BEQ" => Element::Instruction(Instruction::BEQ(Self::do_typebr(&mut iter)?)),
-                "BGE" => Element::Instruction(Instruction::BGE(Self::do_typebr(&mut iter)?)),
-                "BGT" => Element::Instruction(Instruction::BGT(Self::do_typebr(&mut iter)?)),
-                "BHI" => Element::Instruction(Instruction::BHI(Self::do_typebr(&mut iter)?)),
-                "BHS" => Element::Instruction(Instruction::BHS(Self::do_typebr(&mut iter)?)),
-                "BLE" => Element::Instruction(Instruction::BLE(Self::do_typebr(&mut iter)?)),
-                "BLO" => Element::Instruction(Instruction::BLO(Self::do_typebr(&mut iter)?)),
-                "BLS" => Element::Instruction(Instruction::BLS(Self::do_typebr(&mut iter)?)),
-                "BLT" => Element::Instruction(Instruction::BLT(Self::do_typebr(&mut iter)?)),
-                "BMI" => Element::Instruction(Instruction::BMI(Self::do_typebr(&mut iter)?)),
-                "BNE" => Element::Instruction(Instruction::BNE(Self::do_typebr(&mut iter)?)),
-                "BPL" => Element::Instruction(Instruction::BPL(Self::do_typebr(&mut iter)?)),
-                "BRA" => Element::Instruction(Instruction::BRA(Self::do_typebr(&mut iter)?)),
-                "BRN" => Element::Instruction(Instruction::BRN(Self::do_typebr(&mut iter)?)),
-                "BSR" => Element::Instruction(Instruction::BSR(Self::do_typebr(&mut iter)?)),
-                "BVC" => Element::Instruction(Instruction::BVC(Self::do_typebr(&mut iter)?)),
-                "BVS" => Element::Instruction(Instruction::BVS(Self::do_typebr(&mut iter)?)),
+                "ASR" => Element::Instruction(Instruction::ASR(self.do_type2(&mut iter)?)),
+                "BITA" => Element::Instruction(Instruction::BITA(self.do_type1(&mut iter)?)),
+                "BITB" => Element::Instruction(Instruction::BITB(self.do_type1(&mut iter)?)),
+                "BCC" => Element::Instruction(Instruction::BCC(self.do_typebr(&mut iter)?)),
+                "BCS" => Element::Instruction(Instruction::BCS(self.do_typebr(&mut iter)?)),
+                "BEQ" => Element::Instruction(Instruction::BEQ(self.do_typebr(&mut iter)?)),
+                "BGE" => Element::Instruction(Instruction::BGE(self.do_typebr(&mut iter)?)),
+                "BGT" => Element::Instruction(Instruction::BGT(self.do_typebr(&mut iter)?)),
+                "BHI" => Element::Instruction(Instruction::BHI(self.do_typebr(&mut iter)?)),
+                "BHS" => Element::Instruction(Instruction::BHS(self.do_typebr(&mut iter)?)),
+                "BLE" => Element::Instruction(Instruction::BLE(self.do_typebr(&mut iter)?)),
+                "BLO" => Element::Instruction(Instruction::BLO(self.do_typebr(&mut iter)?)),
+                "BLS" => Element::Instruction(Instruction::BLS(self.do_typebr(&mut iter)?)),
+                "BLT" => Element::Instruction(Instruction::BLT(self.do_typebr(&mut iter)?)),
+                "BMI" => Element::Instruction(Instruction::BMI(self.do_typebr(&mut iter)?)),
+                "BNE" => Element::Instruction(Instruction::BNE(self.do_typebr(&mut iter)?)),
+                "BPL" => Element::Instruction(Instruction::BPL(self.do_typebr(&mut iter)?)),
+                "BRA" => Element::Instruction(Instruction::BRA(self.do_typebr(&mut iter)?)),
+                "BRN" => Element::Instruction(Instruction::BRN(self.do_typebr(&mut iter)?)),
+                "BSR" => Element::Instruction(Instruction::BSR(self.do_typebr(&mut iter)?)),
+                "BVC" => Element::Instruction(Instruction::BVC(self.do_typebr(&mut iter)?)),
+                "BVS" => Element::Instruction(Instruction::BVS(self.do_typebr(&mut iter)?)),
                 "CLC" => Element::Instruction(Instruction::CLC),
                 "CLF" => Element::Instruction(Instruction::CLF),
                 "CLI" => Element::Instruction(Instruction::CLI),
                 "CLIF" => Element::Instruction(Instruction::CLIF),
                 "CLRA" => Element::Instruction(Instruction::CLRA),
                 "CLRB" => Element::Instruction(Instruction::CLRB),
-                "CLR" => Element::Instruction(Instruction::CLR(Self::do_type2(&mut iter)?)),
-                "CMPA" => Element::Instruction(Instruction::CMPA(Self::do_type1(&mut iter)?)),
-                "CMPB" => Element::Instruction(Instruction::CMPB(Self::do_type1(&mut iter)?)),
-                "CMPD" => Element::Instruction(Instruction::CMPD(Self::do_type1(&mut iter)?)),
-                "CMPS" => Element::Instruction(Instruction::CMPS(Self::do_type1(&mut iter)?)),
-                "CMPU" => Element::Instruction(Instruction::CMPU(Self::do_type1(&mut iter)?)),
-                "CMPX" => Element::Instruction(Instruction::CMPX(Self::do_type1(&mut iter)?)),
-                "CMPY" => Element::Instruction(Instruction::CMPY(Self::do_type1(&mut iter)?)),
+                "CLR" => Element::Instruction(Instruction::CLR(self.do_type2(&mut iter)?)),
+                "CMPA" => Element::Instruction(Instruction::CMPA(self.do_type1(&mut iter)?)),
+                "CMPB" => Element::Instruction(Instruction::CMPB(self.do_type1(&mut iter)?)),
+                "CMPD" => Element::Instruction(Instruction::CMPD(self.do_type1(&mut iter)?)),
+                "CMPS" => Element::Instruction(Instruction::CMPS(self.do_type1(&mut iter)?)),
+                "CMPU" => Element::Instruction(Instruction::CMPU(self.do_type1(&mut iter)?)),
+                "CMPX" => Element::Instruction(Instruction::CMPX(self.do_type1(&mut iter)?)),
+                "CMPY" => Element::Instruction(Instruction::CMPY(self.do_type1(&mut iter)?)),
                 "CLV" => Element::Instruction(Instruction::CLV),
                 "COMA" => Element::Instruction(Instruction::COMA),
                 "COMB" => Element::Instruction(Instruction::COMB),
-                "COM" => Element::Instruction(Instruction::COM(Self::do_type2(&mut iter)?)),
-                "CWAI" => Element::Instruction(Instruction::CWAI(Self::do_typecc(&mut iter)?)),
+                "COM" => Element::Instruction(Instruction::COM(self.do_type2(&mut iter)?)),
+                "CWAI" => Element::Instruction(Instruction::CWAI(self.do_typecc(&mut iter)?)),
                 "DAA" => Element::Instruction(Instruction::DAA),
                 "DECA" => Element::Instruction(Instruction::DECA),
                 "DECB" => Element::Instruction(Instruction::DECB),
-                "DEC" => Element::Instruction(Instruction::DEC(Self::do_type2(&mut iter)?)),
-                "EXG" => Element::Instruction(Instruction::EXG(Self::do_typext(&mut iter)?)),
+                "DEC" => Element::Instruction(Instruction::DEC(self.do_type2(&mut iter)?)),
+                "EXG" => Element::Instruction(Instruction::EXG(self.do_typext(&mut iter)?)),
                 "INCA" => Element::Instruction(Instruction::INCA),
                 "INCB" => Element::Instruction(Instruction::INCB),
-                "INC" => Element::Instruction(Instruction::INC(Self::do_type2(&mut iter)?)),
-                "JMP" => Element::Instruction(Instruction::JMP(Self::do_type2(&mut iter)?)),
-                "JSR" => Element::Instruction(Instruction::JSR(Self::do_type2(&mut iter)?)),
-                "LBCC" => Element::Instruction(Instruction::BCC(Self::do_typelbr(&mut iter)?)),
-                "LBCS" => Element::Instruction(Instruction::BCS(Self::do_typelbr(&mut iter)?)),
-                "LBEQ" => Element::Instruction(Instruction::BEQ(Self::do_typelbr(&mut iter)?)),
-                "LBGE" => Element::Instruction(Instruction::BGE(Self::do_typelbr(&mut iter)?)),
-                "LBGT" => Element::Instruction(Instruction::BGT(Self::do_typelbr(&mut iter)?)),
-                "LBHI" => Element::Instruction(Instruction::BHI(Self::do_typelbr(&mut iter)?)),
-                "LBHS" => Element::Instruction(Instruction::BHS(Self::do_typelbr(&mut iter)?)),
-                "LBLE" => Element::Instruction(Instruction::BLE(Self::do_typelbr(&mut iter)?)),
-                "LBLO" => Element::Instruction(Instruction::BLO(Self::do_typelbr(&mut iter)?)),
-                "LBLS" => Element::Instruction(Instruction::BLS(Self::do_typelbr(&mut iter)?)),
-                "LBLT" => Element::Instruction(Instruction::BLT(Self::do_typelbr(&mut iter)?)),
-                "LBMI" => Element::Instruction(Instruction::BMI(Self::do_typelbr(&mut iter)?)),
-                "LBNE" => Element::Instruction(Instruction::BNE(Self::do_typelbr(&mut iter)?)),
-                "LBPL" => Element::Instruction(Instruction::BPL(Self::do_typelbr(&mut iter)?)),
-                "LBRA" => Element::Instruction(Instruction::BRA(Self::do_typelbr(&mut iter)?)),
-                "LBRN" => Element::Instruction(Instruction::BRN(Self::do_typelbr(&mut iter)?)),
-                "LBSR" => Element::Instruction(Instruction::BSR(Self::do_typelbr(&mut iter)?)),
-                "LBVC" => Element::Instruction(Instruction::BVC(Self::do_typelbr(&mut iter)?)),
-                "LBVS" => Element::Instruction(Instruction::BVS(Self::do_typelbr(&mut iter)?)),
-                "LDA" => Element::Instruction(Instruction::LDA(Self::do_type1(&mut iter)?)),
-                "LDB" => Element::Instruction(Instruction::LDB(Self::do_type1(&mut iter)?)),
-                "LDD" => Element::Instruction(Instruction::LDD(Self::do_type1(&mut iter)?)),
-                "LDX" => Element::Instruction(Instruction::LDX(Self::do_type1(&mut iter)?)),
-                "LDY" => Element::Instruction(Instruction::LDY(Self::do_type1(&mut iter)?)),
-                "LDS" => Element::Instruction(Instruction::LDS(Self::do_type1(&mut iter)?)),
-                "LDU" => Element::Instruction(Instruction::LDU(Self::do_type1(&mut iter)?)),
-                "LEAX" => Element::Instruction(Instruction::LEAX(Self::do_type2(&mut iter)?)),
-                "LEAY" => Element::Instruction(Instruction::LEAY(Self::do_type2(&mut iter)?)),
-                "LEAU" => Element::Instruction(Instruction::LEAU(Self::do_type2(&mut iter)?)),
-                "LEAS" => Element::Instruction(Instruction::LEAS(Self::do_type2(&mut iter)?)),
+                "INC" => Element::Instruction(Instruction::INC(self.do_type2(&mut iter)?)),
+                "JMP" => Element::Instruction(Instruction::JMP(self.do_type2(&mut iter)?)),
+                "JSR" => Element::Instruction(Instruction::JSR(self.do_type2(&mut iter)?)),
+                "LBCC" => Element::Instruction(Instruction::BCC(self.do_typelbr(&mut iter)?)),
+                "LBCS" => Element::Instruction(Instruction::BCS(self.do_typelbr(&mut iter)?)),
+                "LBEQ" => Element::Instruction(Instruction::BEQ(self.do_typelbr(&mut iter)?)),
+                "LBGE" => Element::Instruction(Instruction::BGE(self.do_typelbr(&mut iter)?)),
+                "LBGT" => Element::Instruction(Instruction::BGT(self.do_typelbr(&mut iter)?)),
+                "LBHI" => Element::Instruction(Instruction::BHI(self.do_typelbr(&mut iter)?)),
+                "LBHS" => Element::Instruction(Instruction::BHS(self.do_typelbr(&mut iter)?)),
+                "LBLE" => Element::Instruction(Instruction::BLE(self.do_typelbr(&mut iter)?)),
+                "LBLO" => Element::Instruction(Instruction::BLO(self.do_typelbr(&mut iter)?)),
+                "LBLS" => Element::Instruction(Instruction::BLS(self.do_typelbr(&mut iter)?)),
+                "LBLT" => Element::Instruction(Instruction::BLT(self.do_typelbr(&mut iter)?)),
+                "LBMI" => Element::Instruction(Instruction::BMI(self.do_typelbr(&mut iter)?)),
+                "LBNE" => Element::Instruction(Instruction::BNE(self.do_typelbr(&mut iter)?)),
+                "LBPL" => Element::Instruction(Instruction::BPL(self.do_typelbr(&mut iter)?)),
+                "LBRA" => Element::Instruction(Instruction::BRA(self.do_typelbr(&mut iter)?)),
+                "LBRN" => Element::Instruction(Instruction::BRN(self.do_typelbr(&mut iter)?)),
+                "LBSR" => Element::Instruction(Instruction::BSR(self.do_typelbr(&mut iter)?)),
+                "LBVC" => Element::Instruction(Instruction::BVC(self.do_typelbr(&mut iter)?)),
+                "LBVS" => Element::Instruction(Instruction::BVS(self.do_typelbr(&mut iter)?)),
+                "LDA" => Element::Instruction(Instruction::LDA(self.do_type1(&mut iter)?)),
+                "LDB" => Element::Instruction(Instruction::LDB(self.do_type1(&mut iter)?)),
+                "LDD" => Element::Instruction(Instruction::LDD(self.do_type1(&mut iter)?)),
+                "LDX" => Element::Instruction(Instruction::LDX(self.do_type1(&mut iter)?)),
+                "LDY" => Element::Instruction(Instruction::LDY(self.do_type1(&mut iter)?)),
+                "LDS" => Element::Instruction(Instruction::LDS(self.do_type1(&mut iter)?)),
+                "LDU" => Element::Instruction(Instruction::LDU(self.do_type1(&mut iter)?)),
+                "LEAX" => Element::Instruction(Instruction::LEAX(self.do_type2(&mut iter)?)),
+                "LEAY" => Element::Instruction(Instruction::LEAY(self.do_type2(&mut iter)?)),
+                "LEAU" => Element::Instruction(Instruction::LEAU(self.do_type2(&mut iter)?)),
+                "LEAS" => Element::Instruction(Instruction::LEAS(self.do_type2(&mut iter)?)),
                 "LSLA" => Element::Instruction(Instruction::LSLA),
                 "LSLB" => Element::Instruction(Instruction::LSLB),
-                "LSL" => Element::Instruction(Instruction::LSL(Self::do_type2(&mut iter)?)),
+                "LSL" => Element::Instruction(Instruction::LSL(self.do_type2(&mut iter)?)),
                 "LSRA" => Element::Instruction(Instruction::LSRA),
                 "LSRB" => Element::Instruction(Instruction::LSRB),
-                "LSR" => Element::Instruction(Instruction::LSR(Self::do_type2(&mut iter)?)),
+                "LSR" => Element::Instruction(Instruction::LSR(self.do_type2(&mut iter)?)),
                 "MUL" => Element::Instruction(Instruction::MUL),
                 "NEGA" => Element::Instruction(Instruction::NEGA),
                 "NEGB" => Element::Instruction(Instruction::NEGB),
-                "NEG" => Element::Instruction(Instruction::NEG(Self::do_type2(&mut iter)?)),
+                "NEG" => Element::Instruction(Instruction::NEG(self.do_type2(&mut iter)?)),
                 "NOP" => Element::Instruction(Instruction::NOP),
-                "ORA" => Element::Instruction(Instruction::ORA(Self::do_type1(&mut iter)?)),
-                "ORB" => Element::Instruction(Instruction::ORB(Self::do_type1(&mut iter)?)),
-                "ORCC" => Element::Instruction(Instruction::ORCC(Self::do_typecc(&mut iter)?)),
+                "ORA" => Element::Instruction(Instruction::ORA(self.do_type1(&mut iter)?)),
+                "ORB" => Element::Instruction(Instruction::ORB(self.do_type1(&mut iter)?)),
+                "ORCC" => Element::Instruction(Instruction::ORCC(self.do_typecc(&mut iter)?)),
                 "PSHS" => {
-                    Element::Instruction(Instruction::PSHS(Self::do_typepspl(Stack::S, &mut iter)?))
+                    Element::Instruction(Instruction::PSHS(self.do_typepspl(Stack::S, &mut iter)?))
                 }
                 "PSHU" => {
-                    Element::Instruction(Instruction::PSHU(Self::do_typepspl(Stack::U, &mut iter)?))
+                    Element::Instruction(Instruction::PSHU(self.do_typepspl(Stack::U, &mut iter)?))
                 }
                 "PULS" => {
-                    Element::Instruction(Instruction::PULS(Self::do_typepspl(Stack::S, &mut iter)?))
+                    Element::Instruction(Instruction::PULS(self.do_typepspl(Stack::S, &mut iter)?))
                 }
                 "PULU" => {
-                    Element::Instruction(Instruction::PULU(Self::do_typepspl(Stack::U, &mut iter)?))
+                    Element::Instruction(Instruction::PULU(self.do_typepspl(Stack::U, &mut iter)?))
                 }
                 "ROLA" => Element::Instruction(Instruction::ROLA),
                 "ROLB" => Element::Instruction(Instruction::ROLB),
-                "ROL" => Element::Instruction(Instruction::ROL(Self::do_type2(&mut iter)?)),
+                "ROL" => Element::Instruction(Instruction::ROL(self.do_type2(&mut iter)?)),
                 "RORA" => Element::Instruction(Instruction::RORA),
                 "RORB" => Element::Instruction(Instruction::RORB),
-                "ROR" => Element::Instruction(Instruction::ROR(Self::do_type2(&mut iter)?)),
+                "ROR" => Element::Instruction(Instruction::ROR(self.do_type2(&mut iter)?)),
                 "RTI" => Element::Instruction(Instruction::RTI),
                 "RTS" => Element::Instruction(Instruction::RTS),
-                "SBCA" => Element::Instruction(Instruction::SBCA(Self::do_type1(&mut iter)?)),
-                "SBCB" => Element::Instruction(Instruction::SBCB(Self::do_type1(&mut iter)?)),
-                "SBCC" => Element::Instruction(Instruction::BCC(Self::do_typesbr(&mut iter)?)),
-                "SBCS" => Element::Instruction(Instruction::BCS(Self::do_typesbr(&mut iter)?)),
-                "SBEQ" => Element::Instruction(Instruction::BEQ(Self::do_typesbr(&mut iter)?)),
-                "SBGE" => Element::Instruction(Instruction::BGE(Self::do_typesbr(&mut iter)?)),
-                "SBGT" => Element::Instruction(Instruction::BGT(Self::do_typesbr(&mut iter)?)),
-                "SBHI" => Element::Instruction(Instruction::BHI(Self::do_typesbr(&mut iter)?)),
-                "SBHS" => Element::Instruction(Instruction::BHS(Self::do_typesbr(&mut iter)?)),
-                "SBLE" => Element::Instruction(Instruction::BLE(Self::do_typesbr(&mut iter)?)),
-                "SLO" => Element::Instruction(Instruction::BLO(Self::do_typesbr(&mut iter)?)),
-                "SLS" => Element::Instruction(Instruction::BLS(Self::do_typesbr(&mut iter)?)),
-                "SLT" => Element::Instruction(Instruction::BLT(Self::do_typesbr(&mut iter)?)),
-                "SBMI" => Element::Instruction(Instruction::BMI(Self::do_typesbr(&mut iter)?)),
-                "SBNE" => Element::Instruction(Instruction::BNE(Self::do_typesbr(&mut iter)?)),
-                "SBPL" => Element::Instruction(Instruction::BPL(Self::do_typesbr(&mut iter)?)),
-                "SBRA" => Element::Instruction(Instruction::BRA(Self::do_typesbr(&mut iter)?)),
-                "SBRN" => Element::Instruction(Instruction::BRN(Self::do_typesbr(&mut iter)?)),
-                "SBSR" => Element::Instruction(Instruction::BSR(Self::do_typesbr(&mut iter)?)),
-                "SBVC" => Element::Instruction(Instruction::BVC(Self::do_typesbr(&mut iter)?)),
-                "SBVS" => Element::Instruction(Instruction::BVS(Self::do_typesbr(&mut iter)?)),
+                "SBCA" => Element::Instruction(Instruction::SBCA(self.do_type1(&mut iter)?)),
+                "SBCB" => Element::Instruction(Instruction::SBCB(self.do_type1(&mut iter)?)),
+                "SBCC" => Element::Instruction(Instruction::BCC(self.do_typesbr(&mut iter)?)),
+                "SBCS" => Element::Instruction(Instruction::BCS(self.do_typesbr(&mut iter)?)),
+                "SBEQ" => Element::Instruction(Instruction::BEQ(self.do_typesbr(&mut iter)?)),
+                "SBGE" => Element::Instruction(Instruction::BGE(self.do_typesbr(&mut iter)?)),
+                "SBGT" => Element::Instruction(Instruction::BGT(self.do_typesbr(&mut iter)?)),
+                "SBHI" => Element::Instruction(Instruction::BHI(self.do_typesbr(&mut iter)?)),
+                "SBHS" => Element::Instruction(Instruction::BHS(self.do_typesbr(&mut iter)?)),
+                "SBLE" => Element::Instruction(Instruction::BLE(self.do_typesbr(&mut iter)?)),
+                "SLO" => Element::Instruction(Instruction::BLO(self.do_typesbr(&mut iter)?)),
+                "SLS" => Element::Instruction(Instruction::BLS(self.do_typesbr(&mut iter)?)),
+                "SLT" => Element::Instruction(Instruction::BLT(self.do_typesbr(&mut iter)?)),
+                "SBMI" => Element::Instruction(Instruction::BMI(self.do_typesbr(&mut iter)?)),
+                "SBNE" => Element::Instruction(Instruction::BNE(self.do_typesbr(&mut iter)?)),
+                "SBPL" => Element::Instruction(Instruction::BPL(self.do_typesbr(&mut iter)?)),
+                "SBRA" => Element::Instruction(Instruction::BRA(self.do_typesbr(&mut iter)?)),
+                "SBRN" => Element::Instruction(Instruction::BRN(self.do_typesbr(&mut iter)?)),
+                "SBSR" => Element::Instruction(Instruction::BSR(self.do_typesbr(&mut iter)?)),
+                "SBVC" => Element::Instruction(Instruction::BVC(self.do_typesbr(&mut iter)?)),
+                "SBVS" => Element::Instruction(Instruction::BVS(self.do_typesbr(&mut iter)?)),
                 "SEC" => Element::Instruction(Instruction::SEC),
                 "SEF" => Element::Instruction(Instruction::SEF),
                 "SEI" => Element::Instruction(Instruction::SEI),
                 "SEIF" => Element::Instruction(Instruction::SEIF),
                 "SEV" => Element::Instruction(Instruction::SEV),
                 "SEX" => Element::Instruction(Instruction::SEX),
-                "STA" => Element::Instruction(Instruction::STA(Self::do_type2(&mut iter)?)),
-                "STB" => Element::Instruction(Instruction::STB(Self::do_type2(&mut iter)?)),
-                "STD" => Element::Instruction(Instruction::STD(Self::do_type2(&mut iter)?)),
-                "STX" => Element::Instruction(Instruction::STX(Self::do_type2(&mut iter)?)),
-                "STY" => Element::Instruction(Instruction::STY(Self::do_type2(&mut iter)?)),
-                "STU" => Element::Instruction(Instruction::STU(Self::do_type2(&mut iter)?)),
-                "STS" => Element::Instruction(Instruction::STS(Self::do_type2(&mut iter)?)),
-                "SUBA" => Element::Instruction(Instruction::SUBA(Self::do_type1(&mut iter)?)),
-                "SUBB" => Element::Instruction(Instruction::SUBB(Self::do_type1(&mut iter)?)),
-                "SUBD" => Element::Instruction(Instruction::SUBD(Self::do_type1(&mut iter)?)),
+                "STA" => Element::Instruction(Instruction::STA(self.do_type2(&mut iter)?)),
+                "STB" => Element::Instruction(Instruction::STB(self.do_type2(&mut iter)?)),
+                "STD" => Element::Instruction(Instruction::STD(self.do_type2(&mut iter)?)),
+                "STX" => Element::Instruction(Instruction::STX(self.do_type2(&mut iter)?)),
+                "STY" => Element::Instruction(Instruction::STY(self.do_type2(&mut iter)?)),
+                "STU" => Element::Instruction(Instruction::STU(self.do_type2(&mut iter)?)),
+                "STS" => Element::Instruction(Instruction::STS(self.do_type2(&mut iter)?)),
+                "SUBA" => Element::Instruction(Instruction::SUBA(self.do_type1(&mut iter)?)),
+                "SUBB" => Element::Instruction(Instruction::SUBB(self.do_type1(&mut iter)?)),
+                "SUBD" => Element::Instruction(Instruction::SUBD(self.do_type1(&mut iter)?)),
                 "SWI" => Element::Instruction(Instruction::SWI),
                 "SWI2" => Element::Instruction(Instruction::SWI2),
                 "SWI3" => Element::Instruction(Instruction::SWI3),
                 "SYNC" => Element::Instruction(Instruction::SYNC),
-                "TFR" => Element::Instruction(Instruction::TFR(Self::do_typext(&mut iter)?)),
+                "TFR" => Element::Instruction(Instruction::TFR(self.do_typext(&mut iter)?)),
                 "TSTA" => Element::Instruction(Instruction::TSTA),
                 "TSTB" => Element::Instruction(Instruction::TSTB),
-                "TST" => Element::Instruction(Instruction::TST(Self::do_type2(&mut iter)?)),
+                "TST" => Element::Instruction(Instruction::TST(self.do_type2(&mut iter)?)),
 
                 _ => return Err("unknown mnemonic".to_string()),
             },
@@ -333,7 +341,7 @@ impl Recogniser {
         Ok(Some(element))
     }
 
-    fn do_typecc(tokens: &mut std::slice::Iter<Token>) -> Result<Typecc, String> {
+    fn do_typecc(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typecc, String> {
         match tokens.next() {
             Some(Token::Hash) => match tokens.next() {
                 Some(Token::Unsigned(value)) => {
@@ -349,7 +357,7 @@ impl Recogniser {
         }
     }
 
-    fn do_typext(token: &mut std::slice::Iter<Token>) -> Result<Typext, String> {
+    fn do_typext(&mut self, token: &mut std::slice::Iter<Token>) -> Result<Typext, String> {
         fn get_tfr_exg_register16(reg: &str) -> Result<TfrExgRegister16, String> {
             match reg {
                 "D" | "d" => Ok(TfrExgRegister16::D),
@@ -395,7 +403,11 @@ impl Recogniser {
         }
     }
 
-    fn do_typepspl(stack: Stack, tokens: &mut std::slice::Iter<Token>) -> Result<Typepspl, String> {
+    fn do_typepspl(
+        &mut self,
+        stack: Stack,
+        tokens: &mut std::slice::Iter<Token>,
+    ) -> Result<Typepspl, String> {
         fn get_pspl_register(reg: &str, stack: &Stack) -> Result<PushPullRegister, String> {
             match reg {
                 "A" | "a" => Ok(PushPullRegister::A),
@@ -499,6 +511,7 @@ impl Recogniser {
     }
 
     fn do_type1<T: IntoBytes + TryFrom<u16>>(
+        &mut self,
         tokens: &mut std::slice::Iter<Token>,
     ) -> Result<Type1<T>, String> {
         match tokens.next() {
@@ -519,7 +532,7 @@ impl Recogniser {
         }
     }
 
-    fn do_type2(tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
+    fn do_type2(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
         Ok(Type2 {
             operand: Self::parse_memory_operand(
                 tokens.next().ok_or("Expected memory operand")?,
@@ -528,7 +541,7 @@ impl Recogniser {
         })
     }
 
-    fn do_typebr(tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
+    fn do_typebr(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
         match tokens.next() {
             Some(Token::Unsigned(value)) => {
                 if *value <= 127 {
@@ -544,7 +557,7 @@ impl Recogniser {
         }
     }
 
-    fn do_typesbr(tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
+    fn do_typesbr(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
         match tokens.next() {
             Some(Token::Unsigned(value)) => {
                 if *value <= 127 {
@@ -557,7 +570,7 @@ impl Recogniser {
         }
     }
 
-    fn do_typelbr(tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
+    fn do_typelbr(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
         match tokens.next() {
             Some(Token::Unsigned(value)) => {
                 if *value <= 32767 {
