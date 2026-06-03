@@ -175,14 +175,6 @@ pub struct Typepspl {
     pub registers: HashSet<PushPullRegister>,
 }
 
-impl std::ops::Deref for Typepspl {
-    type Target = HashSet<PushPullRegister>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.registers
-    }
-}
-
 // Typecc instructions have a single operand,
 // which is a condition code mask.
 #[derive(Debug)]
