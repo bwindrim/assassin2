@@ -16,7 +16,7 @@ use std::convert::TryFrom;
 // The Namelist struct is used to store the mapping of labels to their corresponding addresses in the assembled code.
 #[derive(Debug)]
 pub struct Recogniser {
-    pc: u16,
+    pc: usize, // this isn't a real PC, but tracks the index of the next element in the output list, for label resolution
     origin: Option<u16>,
     execute_address: Option<u16>,
     labels: HashMap<String, i32>,
@@ -87,7 +87,6 @@ impl Recogniser {
                             return Err("Multiple ORG directives".to_string());
                         }
                         self.origin = Some(*value);
-                        self.pc = *value; // set the program counter to the specified value
                         Element::Directive(Directive::ORG(*value))
                     }
                     _ => return Err("Expected unsigned value after ORG".to_string()),
@@ -640,6 +639,7 @@ impl Recogniser {
     pub fn parse(&mut self, filename: &str) -> std::io::Result<()> {
         let path = env::current_dir()?;
         println!("The current directory is {}", path.display());
+        let mut elements: Vec<Element> = Vec::new();
 
         // File <filename> must exist in the current path
         if let Ok(lines) = Self::read_lines(filename) {
@@ -654,7 +654,11 @@ impl Recogniser {
                             println!("{:?}", tokens);
                             let line = self.recognise_line(&tokens);
                             match line {
-                                Ok(line) => println!("Recognised line: {:?}", line),
+                                Ok(line) => {
+                                    println!("Recognised line: {:?}", line);
+                                    elements.push(line.element);
+                                    self.pc = elements.len();
+                                }
                                 Err(e) => println!("Recognition error: {}", e),
                             }
                         }
