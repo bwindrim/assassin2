@@ -372,6 +372,8 @@ pub enum Element {
 
 #[derive(Debug)]
 pub struct Line {
+    pub address: Option<u16>,
+    pub bytes: Vec<u8>,
     pub element: Element,
     pub comment: Option<String>,
 }

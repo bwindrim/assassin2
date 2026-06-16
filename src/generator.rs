@@ -363,3 +363,12 @@ pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::TSTB => encode_type0(0x5D),  // Opcode for TSTB
     }
 }
+
+pub fn encode_directive(directive: &Directive) -> Vec<u8> {
+    match directive {
+        Directive::DB(bytes) => bytes.clone(), // DB directive produces the specified bytes
+        Directive::DW(words) => words.iter().flat_map(|w| vec![(*w >> 8) as u8, *w as u8]).collect(), // DW directive produces the specified words
+        Directive::DS(size) => vec![0; *size as usize], // DS directive reserves space (filled with zeros)
+        _ => vec![],
+    }
+}

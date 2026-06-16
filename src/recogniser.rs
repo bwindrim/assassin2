@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+use crate::generator::{encode_instruction, encode_directive};
 use crate::parser::{Token, tokenize};
 use crate::representation::{
     Directive, Element, IndexedIndirect, Instruction, IntoBytes, Line, MemoryOperand,
@@ -552,7 +553,7 @@ impl Recogniser {
                 }
             }
             Some(Token::Name(label)) => {
-                if let Some(value)  = self.get(label) {
+                if let Some(value) = self.get(label) {
                     let offet = *value - self.pc as i32;
                     if offet >= -128 && offet <= 127 {
                         Ok(Typebr::SHORT(offet as i8))
@@ -560,7 +561,7 @@ impl Recogniser {
                         Ok(Typebr::LONG(offet as i16))
                     } else {
                         Err("Branch target offset too large".to_string())
-                    }                    
+                    }
                 } else {
                     Ok(Typebr::UNRESOLVED(label.clone()))
                 }
@@ -612,10 +613,17 @@ impl Recogniser {
         // containing the recognised element and the comment (if any).
         match self.recognise(tokens) {
             Ok(None) => Ok(Line {
+                address: None,
+                bytes: Vec::new(),
                 element: Element::Directive(Directive::BLANK),
                 comment,
             }),
-            Ok(Some(element)) => Ok(Line { element, comment }),
+            Ok(Some(element)) => Ok(Line {
+                address: None,
+                bytes: Vec::new(),
+                element,
+                comment,
+            }),
             Err(e) => Err(e),
         }
     }
@@ -639,10 +647,10 @@ impl Recogniser {
     pub fn parse(&mut self, filename: &str) -> std::io::Result<()> {
         let path = env::current_dir()?;
         println!("The current directory is {}", path.display());
-        let mut elements: Vec<Element> = Vec::new();
-
         // File <filename> must exist in the current path
         if let Ok(lines) = Self::read_lines(filename) {
+            let mut program: Vec<Line> = Vec::new();
+
             // Consumes the iterator, returns an (Optional) String
             for line in lines.map_while(Result::ok) {
                 println!("{}", line);
@@ -656,8 +664,8 @@ impl Recogniser {
                             match line {
                                 Ok(line) => {
                                     println!("Recognised line: {:?}", line);
-                                    elements.push(line.element);
-                                    self.pc = elements.len();
+                                    self.pc = program.len();
+                                    program.push(line);
                                 }
                                 Err(e) => println!("Recognition error: {}", e),
                             }
@@ -665,6 +673,27 @@ impl Recogniser {
                         Err(e) => println!("Tokenizer error: {:?}", e),
                     }
                 };
+            }
+
+            let mut bytes: Vec<u8> = Vec::new();
+            for mut line in program {
+                match line.element {
+                    Element::Instruction(ref instruction) => {
+                        // Handle instruction bytes.
+                        let instruction_bytes = encode_instruction(&instruction);
+                        line.address = Some(bytes.len() as u16);
+                        line.bytes = instruction_bytes.clone();
+                        bytes.extend(instruction_bytes);
+                    }
+                    Element::Directive(ref directive) => {
+                        // Handle directive bytes.
+                        let directive_bytes = encode_directive(&directive);
+                        line.address = Some(bytes.len() as u16);
+                        line.bytes = directive_bytes.clone();
+                        bytes.extend(directive_bytes);
+                    }
+                }
+                println!("Recognised line: {:?}", line);
             }
         }
         Ok(())
