@@ -372,3 +372,29 @@ pub fn encode_directive(directive: &Directive) -> Vec<u8> {
         _ => vec![],
     }
 }
+
+
+pub fn generate(program: Vec<Line>) -> Vec<u8> {
+    let mut bytes: Vec<u8> = Vec::new();
+    for mut line in program {
+            match line.element {
+                Element::Instruction(ref instruction) => {
+                    // Handle instruction bytes.
+                    let instruction_bytes = encode_instruction(&instruction);
+                    line.address = Some(bytes.len() as u16);
+                    line.bytes = instruction_bytes.clone();
+                    bytes.extend(instruction_bytes);
+                }
+                Element::Directive(ref directive) => {
+                    // Handle directive bytes.
+                    let directive_bytes = encode_directive(&directive);
+                    line.address = Some(bytes.len() as u16);
+                    line.bytes = directive_bytes.clone();
+                    bytes.extend(directive_bytes);
+                }
+            }
+            println!("Recognised line: {:?}", line);
+    }
+    bytes
+}
+

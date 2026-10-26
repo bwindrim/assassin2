@@ -3,7 +3,6 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use crate::generator::{encode_instruction, encode_directive};
 use crate::parser::{Token, tokenize};
 use crate::representation::{
     Directive, Element, IndexedIndirect, Instruction, IntoBytes, Line, MemoryOperand,
@@ -644,7 +643,7 @@ impl Recogniser {
         }
     }
 
-    pub fn parse(&mut self, filename: &str) -> std::io::Result<()> {
+    pub fn parse(&mut self, filename: &str) -> std::io::Result<Vec<Line>> {
         let path = env::current_dir()?;
         println!("The current directory is {}", path.display());
         // File <filename> must exist in the current path
@@ -674,27 +673,6 @@ impl Recogniser {
                 }
             };
         }
-
-        let mut bytes: Vec<u8> = Vec::new();
-        for mut line in program {
-            match line.element {
-                Element::Instruction(ref instruction) => {
-                    // Handle instruction bytes.
-                    let instruction_bytes = encode_instruction(&instruction);
-                    line.address = Some(bytes.len() as u16);
-                    line.bytes = instruction_bytes.clone();
-                    bytes.extend(instruction_bytes);
-                }
-                Element::Directive(ref directive) => {
-                    // Handle directive bytes.
-                    let directive_bytes = encode_directive(&directive);
-                    line.address = Some(bytes.len() as u16);
-                    line.bytes = directive_bytes.clone();
-                    bytes.extend(directive_bytes);
-                }
-            }
-            println!("Recognised line: {:?}", line);
-        }
-        Ok(())
+        Ok(program)
     }
 }
