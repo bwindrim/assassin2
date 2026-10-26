@@ -648,53 +648,52 @@ impl Recogniser {
         let path = env::current_dir()?;
         println!("The current directory is {}", path.display());
         // File <filename> must exist in the current path
-        if let Ok(lines) = Self::read_lines(filename) {
-            let mut program: Vec<Line> = Vec::new();
+        let lines = Self::read_lines(filename)?;
+        let mut program: Vec<Line> = Vec::new();
 
-            // Consumes the iterator, returns an (Optional) String
-            for line in lines.map_while(Result::ok) {
-                println!("{}", line);
-                {
-                    let line: &str = &line;
-                    let result = tokenize(line);
-                    match result {
-                        Ok(tokens) => {
-                            println!("{:?}", tokens);
-                            let line = self.recognise_line(&tokens);
-                            match line {
-                                Ok(line) => {
-                                    println!("Recognised line: {:?}", line);
-                                    self.pc = program.len();
-                                    program.push(line);
-                                }
-                                Err(e) => println!("Recognition error: {}", e),
+        // Consumes the iterator, returns an (Optional) String
+        for line in lines.map_while(Result::ok) {
+            println!("{}", line);
+            {
+                let line: &str = &line;
+                let result = tokenize(line);
+                match result {
+                    Ok(tokens) => {
+                        println!("{:?}", tokens);
+                        let line = self.recognise_line(&tokens);
+                        match line {
+                            Ok(line) => {
+                                println!("Recognised line: {:?}", line);
+                                self.pc = program.len();
+                                program.push(line);
                             }
+                            Err(e) => println!("Recognition error: {}", e),
                         }
-                        Err(e) => println!("Tokenizer error: {:?}", e),
                     }
-                };
-            }
-
-            let mut bytes: Vec<u8> = Vec::new();
-            for mut line in program {
-                match line.element {
-                    Element::Instruction(ref instruction) => {
-                        // Handle instruction bytes.
-                        let instruction_bytes = encode_instruction(&instruction);
-                        line.address = Some(bytes.len() as u16);
-                        line.bytes = instruction_bytes.clone();
-                        bytes.extend(instruction_bytes);
-                    }
-                    Element::Directive(ref directive) => {
-                        // Handle directive bytes.
-                        let directive_bytes = encode_directive(&directive);
-                        line.address = Some(bytes.len() as u16);
-                        line.bytes = directive_bytes.clone();
-                        bytes.extend(directive_bytes);
-                    }
+                    Err(e) => println!("Tokenizer error: {:?}", e),
                 }
-                println!("Recognised line: {:?}", line);
+            };
+        }
+
+        let mut bytes: Vec<u8> = Vec::new();
+        for mut line in program {
+            match line.element {
+                Element::Instruction(ref instruction) => {
+                    // Handle instruction bytes.
+                    let instruction_bytes = encode_instruction(&instruction);
+                    line.address = Some(bytes.len() as u16);
+                    line.bytes = instruction_bytes.clone();
+                    bytes.extend(instruction_bytes);
+                }
+                Element::Directive(ref directive) => {
+                    // Handle directive bytes.
+                    let directive_bytes = encode_directive(&directive);
+                    line.address = Some(bytes.len() as u16);
+                    line.bytes = directive_bytes.clone();
+                    bytes.extend(directive_bytes);
+                }
             }
+            println!("Recognised line: {:?}", line);
         }
         Ok(())
     }
