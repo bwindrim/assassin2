@@ -3,13 +3,13 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+use crate::namelist::Namelist;
 use crate::parser::{Token, tokenize};
 use crate::representation::{
     Directive, Element, IndexedIndirect, Instruction, IntoBytes, Line, MemoryOperand,
     PushPullRegister, Stack, TfrExgRegister8, TfrExgRegister16, Type1, Type2, Typebr, Typecc,
     Typepspl, Typext,
 };
-use crate::namelist::Namelist;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
@@ -447,18 +447,20 @@ impl<'a> Recogniser<'a> {
     }
 
     fn do_indexed_indirect(
+        &mut self,
         tokens: &mut std::slice::Iter<Token>,
     ) -> Result<IndexedIndirect, String> {
         // Implementation for parsing indexed indirect addressing
         unimplemented!()
     }
 
-    fn do_indexed(value: &u16, tokens: &mut std::slice::Iter<Token>) -> Option<IndexedIndirect> {
+    fn do_indexed(&mut self, value: &u16, tokens: &mut std::slice::Iter<Token>) -> Option<IndexedIndirect> {
         // Implementation for parsing indexed indirect addressing
         unimplemented!()
     }
 
     fn parse_memory_operand(
+        &mut self,
         token: &Token,
         tokens: &mut std::slice::Iter<Token>,
     ) -> Result<MemoryOperand, String> {
@@ -483,19 +485,19 @@ impl<'a> Recogniser<'a> {
                 }
             }
             Token::Unsigned(value) => {
-                //            if let Some(ind) = do_indexed(value, tokens) {
-                //                Ok(MemoryOperand::IND(ind))
-                //            } else {
-                Ok(MemoryOperand::EXT(*value))
-                //            }
+                if let Some(ind) = self.do_indexed(value, tokens) {
+                    Ok(MemoryOperand::IND(ind))
+                } else {
+                    Ok(MemoryOperand::EXT(*value))
+                }
             }
             Token::OpenBracket => {
-                //            let ind = do_indexed_indirect(tokens)?;
-                //            if let Some(Token::CloseBracket) = tokens.next() {
-                //                Ok(MemoryOperand::IND(ind))
-                //            } else {
-                Err("Expected ] at end of indexed indirect operand".to_string())
-                //            }
+                let ind = self.do_indexed_indirect(tokens)?;
+                if let Some(Token::CloseBracket) = tokens.next() {
+                    Ok(MemoryOperand::IND(ind))
+                } else {
+                    Err("Expected ] at end of indexed indirect operand".to_string())
+                }
             }
             _ => Err("unexpected memory operand".to_string()),
         }
@@ -518,14 +520,14 @@ impl<'a> Recogniser<'a> {
                     Err("Expected unsigned value after # in immediate operand".to_string())
                 }
             }
-            Some(token) => Ok(Type1::MEM(Self::parse_memory_operand(token, tokens)?)),
+            Some(token) => Ok(Type1::MEM(self.parse_memory_operand(token, tokens)?)),
             None => Err("Expected immediate or memory operand".to_string()),
         }
     }
 
     fn do_type2(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Type2, String> {
         Ok(Type2 {
-            operand: Self::parse_memory_operand(
+            operand: self.parse_memory_operand(
                 tokens.next().ok_or("Expected memory operand")?,
                 tokens,
             )?,
