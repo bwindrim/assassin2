@@ -1,3 +1,4 @@
+use crate::namelist::Namelist;
 use crate::representation::*;
 
 fn encode_indexed_indirect(operand: &IndexedIndirect) -> Vec<u8> {
@@ -198,19 +199,27 @@ fn encode_typepspl(opcode: u8, operand: &Typepspl) -> Vec<u8> {
     vec![opcode, mask]
 }
 
-fn encode_typebr(opcode: u16, operand: &Typebr) -> Vec<u8> {
+fn encode_typebr(opcode: u16, operand: &Typebr, namelist: &Namelist) -> Vec<u8> {
     match operand {
         Typebr::SHORT(offset) => vec![opcode as u8, *offset as u8],
         Typebr::LONG(offset) => vec![opcode as u8, (*offset >> 8) as u8, *offset as u8],
-        Typebr::UNRESOLVED(label) => {
-            // Placeholder for unresolved label; in a real assembler, this would be resolved later
-            println!("Warning: Unresolved branch target '{}'", label);
-            vec![opcode as u8, 0x00, 0x00] // Placeholder offset
+        Typebr::FORWARD(label) => {
+            // Placeholder for forward label; in a real assembler, this would be resolved later
+            match namelist.get(label) {
+                Some(value) => {
+                    let offset = *value - 0; // Assuming current PC is 0 for placeholder
+                    vec![opcode as u8, (offset >> 8) as u8, offset as u8]
+                }
+                None => {
+                    println!("Warning: Unresolved branch target '{}'", label);
+                    vec![opcode as u8, 0x00, 0x00] // Placeholder offset
+                }
+            }
         }
     }
 }
 
-pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
+pub fn encode_instruction(instr: &Instruction, namelist: &Namelist) -> Vec<u8> {
     match instr {
         Instruction::ABX => encode_type0(0x3A), // Opcode for ABX
         Instruction::ADCA(operand) => encode_type1(0x89, operand), // Base opcode for ADCA
@@ -260,36 +269,36 @@ pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::INCB => encode_type0(0x5C), // Opcode for INCB
         Instruction::JMP(operand) => encode_type2(0x0E, operand), // Base opcode for JMP
         Instruction::JSR(operand) => encode_type2(0x9D, operand), // Base opcode for JSR
-        Instruction::LBCC(operand) => encode_typebr(0x1024, operand), // Opcode for LBCC
-        Instruction::LBCS(operand) => encode_typebr(0x1025, operand), // Opcode for LBCS
-        Instruction::LBEQ(operand) => encode_typebr(0x1027, operand), // Opcode for LBEQ
-        Instruction::LBGE(operand) => encode_typebr(0x102C, operand), // Opcode for LBGE
-        Instruction::LBGT(operand) => encode_typebr(0x102E, operand), // Opcode for LBGT
-        Instruction::LBHI(operand) => encode_typebr(0x1022, operand), // Opcode for LBHI
-        Instruction::LBHS(operand) => encode_typebr(0x1024, operand), // Opcode for LBHS (same as LBCC)
-        Instruction::LBLE(operand) => encode_typebr(0x102F, operand), // Opcode for LBLE
-        Instruction::LBLO(operand) => encode_typebr(0x1025, operand), // Opcode for LBLO
-        Instruction::LBLS(operand) => encode_typebr(0x1023, operand), // Opcode for LBLS
-        Instruction::LBLT(operand) => encode_typebr(0x102D, operand), // Opcode for LBLT
-        Instruction::LBMI(operand) => encode_typebr(0x102B, operand), // Opcode for LBMI
-        Instruction::LBNE(operand) => encode_typebr(0x1026, operand), // Opcode for LBNE
-        Instruction::LBPL(operand) => encode_typebr(0x102A, operand), // Opcode for LBPL
-        Instruction::LBRA(operand) => encode_typebr(0x16, operand),   // Opcode for LBRA
-        Instruction::LBRN(operand) => encode_typebr(0x1021, operand), // Opcode for LBRN
-        Instruction::LBSR(operand) => encode_typebr(0x17, operand),   // Opcode for LBSR
-        Instruction::LBVC(operand) => encode_typebr(0x1028, operand), // Opcode for LBVC
-        Instruction::LBVS(operand) => encode_typebr(0x1029, operand), // Opcode for LBVS
-        Instruction::LDA(operand) => encode_type1(0x86, operand),     // Base opcode for LDA
-        Instruction::LDB(operand) => encode_type1(0xC6, operand),     // Base opcode for LDB
-        Instruction::LDD(operand) => encode_type1(0xCC, operand),     // Base opcode for LDD
-        Instruction::LDS(operand) => encode_type1(0x10CE, operand),   // Base opcode for LDS
-        Instruction::LDU(operand) => encode_type1(0xCE, operand),     // Base opcode for LDU
-        Instruction::LDX(operand) => encode_type1(0x8E, operand),     // Base opcode for LDX
-        Instruction::LDY(operand) => encode_type1(0x108E, operand),   // Base opcode for LDY
-        Instruction::LEAX(operand) => encode_type2(0x30, operand),    // Opcode for LEAX
-        Instruction::LEAY(operand) => encode_type2(0x31, operand),    // Opcode for LEAY
-        Instruction::LEAU(operand) => encode_type2(0x32, operand),    // Opcode for LEAU
-        Instruction::LEAS(operand) => encode_type2(0x33, operand),    // Opcode for LEAS
+        Instruction::LBCC(operand) => encode_typebr(0x1024, operand, namelist), // Opcode for LBCC
+        Instruction::LBCS(operand) => encode_typebr(0x1025, operand, namelist), // Opcode for LBCS
+        Instruction::LBEQ(operand) => encode_typebr(0x1027, operand, namelist), // Opcode for LBEQ
+        Instruction::LBGE(operand) => encode_typebr(0x102C, operand, namelist), // Opcode for LBGE
+        Instruction::LBGT(operand) => encode_typebr(0x102E, operand, namelist), // Opcode for LBGT
+        Instruction::LBHI(operand) => encode_typebr(0x1022, operand, namelist), // Opcode for LBHI
+        Instruction::LBHS(operand) => encode_typebr(0x1024, operand, namelist), // Opcode for LBHS (same as LBCC)
+        Instruction::LBLE(operand) => encode_typebr(0x102F, operand, namelist), // Opcode for LBLE
+        Instruction::LBLO(operand) => encode_typebr(0x1025, operand, namelist), // Opcode for LBLO
+        Instruction::LBLS(operand) => encode_typebr(0x1023, operand, namelist), // Opcode for LBLS
+        Instruction::LBLT(operand) => encode_typebr(0x102D, operand, namelist), // Opcode for LBLT
+        Instruction::LBMI(operand) => encode_typebr(0x102B, operand, namelist), // Opcode for LBMI
+        Instruction::LBNE(operand) => encode_typebr(0x1026, operand, namelist), // Opcode for LBNE
+        Instruction::LBPL(operand) => encode_typebr(0x102A, operand, namelist), // Opcode for LBPL
+        Instruction::LBRA(operand) => encode_typebr(0x16, operand, namelist),   // Opcode for LBRA
+        Instruction::LBRN(operand) => encode_typebr(0x1021, operand, namelist), // Opcode for LBRN
+        Instruction::LBSR(operand) => encode_typebr(0x17, operand, namelist),   // Opcode for LBSR
+        Instruction::LBVC(operand) => encode_typebr(0x1028, operand, namelist), // Opcode for LBVC
+        Instruction::LBVS(operand) => encode_typebr(0x1029, operand, namelist), // Opcode for LBVS
+        Instruction::LDA(operand) => encode_type1(0x86, operand), // Base opcode for LDA
+        Instruction::LDB(operand) => encode_type1(0xC6, operand), // Base opcode for LDB
+        Instruction::LDD(operand) => encode_type1(0xCC, operand), // Base opcode for LDD
+        Instruction::LDS(operand) => encode_type1(0x10CE, operand), // Base opcode for LDS
+        Instruction::LDU(operand) => encode_type1(0xCE, operand), // Base opcode for LDU
+        Instruction::LDX(operand) => encode_type1(0x8E, operand), // Base opcode for LDX
+        Instruction::LDY(operand) => encode_type1(0x108E, operand), // Base opcode for LDY
+        Instruction::LEAX(operand) => encode_type2(0x30, operand), // Opcode for LEAX
+        Instruction::LEAY(operand) => encode_type2(0x31, operand), // Opcode for LEAY
+        Instruction::LEAU(operand) => encode_type2(0x32, operand), // Opcode for LEAU
+        Instruction::LEAS(operand) => encode_type2(0x33, operand), // Opcode for LEAS
         Instruction::LSL(operand) => encode_type2(0x08, operand), // Base opcode for LSL (same as ASL)
         Instruction::LSLA => encode_type0(0x48),                  // Opcode for LSLA (same as ASLA)
         Instruction::LSLB => encode_type0(0x58),                  // Opcode for LSLB (same as ASLB)
@@ -318,26 +327,26 @@ pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
         Instruction::RTS => encode_type0(0x39),                   // Opcode for RTS
         Instruction::SBCA(operand) => encode_type1(0x82, operand), // Base opcode for SBCA
         Instruction::SBCB(operand) => encode_type1(0xC2, operand), // Base opcode for SBCB
-        Instruction::BCC(operand) => encode_typebr(0x24, operand), // Opcode for BCC
-        Instruction::BCS(operand) => encode_typebr(0x25, operand), // Opcode for BCS
-        Instruction::BEQ(operand) => encode_typebr(0x27, operand), // Opcode for BEQ
-        Instruction::BGE(operand) => encode_typebr(0x2C, operand), // Opcode for BGE
-        Instruction::BGT(operand) => encode_typebr(0x2E, operand), // Opcode for BGT
-        Instruction::BHI(operand) => encode_typebr(0x22, operand), // Opcode for BHI
-        Instruction::BHS(operand) => encode_typebr(0x24, operand), // Opcode for BHS (same as BCC)
-        Instruction::BLE(operand) => encode_typebr(0x2F, operand), // Opcode for BLE
-        Instruction::BLO(operand) => encode_typebr(0x25, operand), // Opcode for BLO
-        Instruction::BLS(operand) => encode_typebr(0x23, operand), // Opcode for BLS
-        Instruction::BLT(operand) => encode_typebr(0x2D, operand), // Opcode for BLT
-        Instruction::BMI(operand) => encode_typebr(0x2B, operand), // Opcode for BMI
-        Instruction::BNE(operand) => encode_typebr(0x26, operand), // Opcode for BNE
-        Instruction::BPL(operand) => encode_typebr(0x2A, operand), // Opcode for BPL
-        Instruction::BRA(operand) => encode_typebr(0x20, operand), // Opcode for BRA
-        Instruction::BRN(operand) => encode_typebr(0x21, operand), // Opcode for BRN
-        Instruction::BSR(operand) => encode_typebr(0x8D, operand), // Opcode for BSR
-        Instruction::BVC(operand) => encode_typebr(0x28, operand), // Opcode for BVC
-        Instruction::BVS(operand) => encode_typebr(0x29, operand), // Opcode for BVS
-        Instruction::SEC => encode_type0(0x1A01),                 // ORCC #$01 (set carry)
+        Instruction::BCC(operand) => encode_typebr(0x24, operand, namelist), // Opcode for BCC
+        Instruction::BCS(operand) => encode_typebr(0x25, operand, namelist), // Opcode for BCS
+        Instruction::BEQ(operand) => encode_typebr(0x27, operand, namelist), // Opcode for BEQ
+        Instruction::BGE(operand) => encode_typebr(0x2C, operand, namelist), // Opcode for BGE
+        Instruction::BGT(operand) => encode_typebr(0x2E, operand, namelist), // Opcode for BGT
+        Instruction::BHI(operand) => encode_typebr(0x22, operand, namelist), // Opcode for BHI
+        Instruction::BHS(operand) => encode_typebr(0x24, operand, namelist), // Opcode for BHS (same as BCC)
+        Instruction::BLE(operand) => encode_typebr(0x2F, operand, namelist), // Opcode for BLE
+        Instruction::BLO(operand) => encode_typebr(0x25, operand, namelist), // Opcode for BLO
+        Instruction::BLS(operand) => encode_typebr(0x23, operand, namelist), // Opcode for BLS
+        Instruction::BLT(operand) => encode_typebr(0x2D, operand, namelist), // Opcode for BLT
+        Instruction::BMI(operand) => encode_typebr(0x2B, operand, namelist), // Opcode for BMI
+        Instruction::BNE(operand) => encode_typebr(0x26, operand, namelist), // Opcode for BNE
+        Instruction::BPL(operand) => encode_typebr(0x2A, operand, namelist), // Opcode for BPL
+        Instruction::BRA(operand) => encode_typebr(0x20, operand, namelist), // Opcode for BRA
+        Instruction::BRN(operand) => encode_typebr(0x21, operand, namelist), // Opcode for BRN
+        Instruction::BSR(operand) => encode_typebr(0x8D, operand, namelist), // Opcode for BSR
+        Instruction::BVC(operand) => encode_typebr(0x28, operand, namelist), // Opcode for BVC
+        Instruction::BVS(operand) => encode_typebr(0x29, operand, namelist), // Opcode for BVS
+        Instruction::SEC => encode_type0(0x1A01), // ORCC #$01 (set carry)
         Instruction::SEF => encode_type0(0x1A40), // ORCC #$40 (set fast interrupt disable)
         Instruction::SEI => encode_type0(0x1A10), // ORCC #$10 (set interrupt disable)
         Instruction::SEIF => encode_type0(0x1A50), // ORCC #$50 (set both interrupt disables)
@@ -367,34 +376,35 @@ pub fn encode_instruction(instr: &Instruction) -> Vec<u8> {
 pub fn encode_directive(directive: &Directive) -> Vec<u8> {
     match directive {
         Directive::DB(bytes) => bytes.clone(), // DB directive produces the specified bytes
-        Directive::DW(words) => words.iter().flat_map(|w| vec![(*w >> 8) as u8, *w as u8]).collect(), // DW directive produces the specified words
+        Directive::DW(words) => words
+            .iter()
+            .flat_map(|w| vec![(*w >> 8) as u8, *w as u8])
+            .collect(), // DW directive produces the specified words
         Directive::DS(size) => vec![0; *size as usize], // DS directive reserves space (filled with zeros)
         _ => vec![],
     }
 }
 
-
-pub fn generate(program: Vec<Line>) -> Vec<u8> {
+pub fn generate(program: Vec<Line>, namelist: &Namelist) -> Vec<u8> {
     let mut bytes: Vec<u8> = Vec::new();
     for mut line in program {
-            match line.element {
-                Element::Instruction(ref instruction) => {
-                    // Handle instruction bytes.
-                    let instruction_bytes = encode_instruction(&instruction);
-                    line.address = Some(bytes.len() as u16);
-                    line.bytes = instruction_bytes.clone();
-                    bytes.extend(instruction_bytes);
-                }
-                Element::Directive(ref directive) => {
-                    // Handle directive bytes.
-                    let directive_bytes = encode_directive(&directive);
-                    line.address = Some(bytes.len() as u16);
-                    line.bytes = directive_bytes.clone();
-                    bytes.extend(directive_bytes);
-                }
+        match line.element {
+            Element::Instruction(ref instruction) => {
+                // Handle instruction bytes.
+                let instruction_bytes = encode_instruction(&instruction, namelist);
+                line.address = Some(bytes.len() as u16);
+                line.bytes = instruction_bytes.clone();
+                bytes.extend(instruction_bytes);
             }
-            println!("Recognised line: {:?}", line);
+            Element::Directive(ref directive) => {
+                // Handle directive bytes.
+                let directive_bytes = encode_directive(&directive);
+                line.address = Some(bytes.len() as u16);
+                line.bytes = directive_bytes.clone();
+                bytes.extend(directive_bytes);
+            }
+        }
+        println!("Recognised line: {:?}", line);
     }
     bytes
 }
-

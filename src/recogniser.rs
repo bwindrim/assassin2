@@ -9,35 +9,27 @@ use crate::representation::{
     PushPullRegister, Stack, TfrExgRegister8, TfrExgRegister16, Type1, Type2, Typebr, Typecc,
     Typepspl, Typext,
 };
-use std::collections::HashMap;
+use crate::namelist::Namelist;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
 // The Namelist struct is used to store the mapping of labels to their corresponding addresses in the assembled code.
 #[derive(Debug)]
-pub struct Recogniser {
+pub struct Recogniser<'a> {
     pc: usize, // this isn't a real PC, but tracks the index of the next element in the output list, for label resolution
     origin: Option<u16>,
     execute_address: Option<u16>,
-    labels: HashMap<String, i32>,
+    namelist: &'a mut Namelist,
 }
 
-impl Recogniser {
-    pub fn new() -> Self {
+impl<'a> Recogniser<'a> {
+    pub fn new(namelist: &'a mut Namelist) -> Self {
         Recogniser {
             pc: 0,
             origin: None,
             execute_address: None,
-            labels: HashMap::new(),
+            namelist,
         }
-    }
-
-    fn insert(&mut self, label: String, value: i32) {
-        self.labels.insert(label, value);
-    }
-
-    fn get(&self, label: &str) -> Option<&i32> {
-        self.labels.get(label)
     }
 
     fn recognise(&mut self, tokens: &[Token]) -> Result<Option<Element>, String> {
@@ -67,7 +59,7 @@ impl Recogniser {
                 next_token = iter.next(); // skip to the next token
                 if let Some(name) = label {
                     // Define label.
-                    self.insert(name.clone(), self.pc as i32); // insert the label into the namelist
+                    self.namelist.insert(name.clone(), self.pc as i32); // insert the label into the namelist
                     println!("Label: {}", name);
                 } else {
                     return Err("Unexpected : at start of line".to_string());
@@ -105,7 +97,7 @@ impl Recogniser {
                 "EQU" => match iter.next() {
                     None => return Err("Expected operand after EQU".to_string()),
                     Some(Token::Unsigned(value)) => {
-                        self.insert(
+                        self.namelist.insert(
                             label
                                 .ok_or("EQU directive must have a name".to_string())?
                                 .clone(),
@@ -543,16 +535,17 @@ impl Recogniser {
     fn do_typebr(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
         match tokens.next() {
             Some(Token::Unsigned(value)) => {
-                if *value <= 127 {
-                    Ok(Typebr::SHORT(*value as i8))
-                } else if *value <= 32767 {
-                    Ok(Typebr::LONG(*value as i16))
+                let offet = *value as i32 - self.pc as i32;
+                if offet >= -128 && offet <= 127 {
+                    Ok(Typebr::SHORT(offet as i8))
+                } else if offet >= -32768 && offet <= 32767 {
+                    Ok(Typebr::LONG(offet as i16))
                 } else {
                     Err("Branch target offset too large".to_string())
                 }
             }
             Some(Token::Name(label)) => {
-                if let Some(value) = self.get(label) {
+                if let Some(value) = self.namelist.get(label) {
                     let offet = *value - self.pc as i32;
                     if offet >= -128 && offet <= 127 {
                         Ok(Typebr::SHORT(offet as i8))
@@ -562,7 +555,7 @@ impl Recogniser {
                         Err("Branch target offset too large".to_string())
                     }
                 } else {
-                    Ok(Typebr::UNRESOLVED(label.clone()))
+                    Ok(Typebr::FORWARD(label.clone()))
                 }
             }
             _ => Err("Expected unsigned value or label in branch operand".to_string()),
@@ -591,7 +584,7 @@ impl Recogniser {
                     Err("Branch target offset too large".to_string())
                 }
             }
-            Some(Token::Name(label)) => Ok(Typebr::UNRESOLVED(label.clone())),
+            Some(Token::Name(label)) => Ok(Typebr::FORWARD(label.clone())),
             _ => Err("Expected unsigned value or label in branch operand".to_string()),
         }
     }

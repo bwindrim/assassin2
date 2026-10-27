@@ -159,7 +159,7 @@ pub struct Type2 {
 pub enum Typebr {
     SHORT(i8),
     LONG(i16),
-    UNRESOLVED(String),
+    FORWARD(String),
 }
 
 #[derive(Debug, PartialEq)]
