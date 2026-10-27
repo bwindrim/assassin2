@@ -74,29 +74,29 @@ impl<'a> Recogniser<'a> {
             Some(Token::Name(mnemonic)) => match mnemonic.to_uppercase().as_str() {
                 "ORG" => match iter.next() {
                     None => return Err("Expected operand after ORG".to_string()),
-                    Some(Token::Unsigned(value)) => {
+                    Some(Token::Number(value)) => {
                         if None != self.origin {
                             return Err("Multiple ORG directives".to_string());
                         }
-                        self.origin = Some(*value);
-                        Element::Directive(Directive::ORG(*value))
+                        self.origin = Some(*value as u16);
+                        Element::Directive(Directive::ORG(*value as u16))
                     }
                     _ => return Err("Expected unsigned value after ORG".to_string()),
                 },
                 "EXEC" => match iter.next() {
                     None => return Err("Expected operand after EXEC".to_string()),
-                    Some(Token::Unsigned(value)) => {
+                    Some(Token::Number(value)) => {
                         if None != self.execute_address {
                             return Err("Multiple EXEC directives".to_string());
                         }
-                        self.execute_address = Some(*value);
-                        Element::Directive(Directive::EXEC(*value))
+                        self.execute_address = Some(*value as u16);
+                        Element::Directive(Directive::EXEC(*value as u16))
                     }
                     _ => return Err("Expected unsigned value after EXEC".to_string()),
                 },
                 "EQU" => match iter.next() {
                     None => return Err("Expected operand after EQU".to_string()),
-                    Some(Token::Unsigned(value)) => {
+                    Some(Token::Number(value)) => {
                         self.namelist.insert(
                             label
                                 .ok_or("EQU directive must have a name".to_string())?
@@ -114,7 +114,7 @@ impl<'a> Recogniser<'a> {
                     while let Some(token) = iter.next() {
                         match token {
                             // ToDo: make this stricter wrt. values and commas?
-                            Token::Unsigned(value) => values.push(*value as u8),
+                            Token::Number(value) => values.push(*value as u8),
                             Token::String(string) => values.extend(string.bytes()),
                             Token::Comma => continue, // allow commas between values
                             Token::Comment(_) => break,
@@ -130,7 +130,7 @@ impl<'a> Recogniser<'a> {
                     while let Some(token) = iter.next() {
                         match token {
                             // ToDo: make this stricter wrt. values and commas?
-                            Token::Unsigned(value) => values.push(*value),
+                            Token::Number(value) => values.push(*value as u16),
                             Token::Comma => continue, // allow commas between values
                             Token::Comment(_) => break,
                             _ => return Err("Expected unsigned value after DW".to_string()),
@@ -141,7 +141,7 @@ impl<'a> Recogniser<'a> {
                 "DS" => match iter.next() {
                     // ToDo: check for unexpected tokens after the value?
                     None => return Err("Expected operand after DS".to_string()),
-                    Some(Token::Unsigned(value)) => Element::Directive(Directive::DS(*value)),
+                    Some(Token::Number(value)) => Element::Directive(Directive::DS(*value as u16)),
                     _ => return Err("Expected unsigned value after DS".to_string()),
                 },
                 "ABX" => Element::Instruction(Instruction::ABX),
@@ -335,7 +335,7 @@ impl<'a> Recogniser<'a> {
     fn do_typecc(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typecc, String> {
         match tokens.next() {
             Some(Token::Hash) => match tokens.next() {
-                Some(Token::Unsigned(value)) => {
+                Some(Token::Number(value)) => {
                     if *value <= 255 {
                         Ok(Typecc { mask: *value as u8 })
                     } else {
@@ -454,7 +454,7 @@ impl<'a> Recogniser<'a> {
         unimplemented!()
     }
 
-    fn do_indexed(&mut self, value: &u16, tokens: &mut std::slice::Iter<Token>) -> Option<IndexedIndirect> {
+    fn do_indexed(&mut self, value: u16, tokens: &mut std::slice::Iter<Token>) -> Option<IndexedIndirect> {
         // Implementation for parsing indexed indirect addressing
         unimplemented!()
     }
@@ -467,7 +467,7 @@ impl<'a> Recogniser<'a> {
         // Implementation for parsing a memory operand
         match token {
             Token::LessThan => {
-                if let Some(Token::Unsigned(value)) = tokens.next() {
+                if let Some(Token::Number(value)) = tokens.next() {
                     if *value <= 255 {
                         Ok(MemoryOperand::DIR(*value as u8))
                     } else {
@@ -478,17 +478,17 @@ impl<'a> Recogniser<'a> {
                 }
             }
             Token::GreaterThan => {
-                if let Some(Token::Unsigned(value)) = tokens.next() {
-                    Ok(MemoryOperand::EXT(*value))
+                if let Some(Token::Number(value)) = tokens.next() {
+                    Ok(MemoryOperand::EXT(*value as u16))
                 } else {
                     Err("Expected unsigned value after > in memory operand".to_string())
                 }
             }
-            Token::Unsigned(value) => {
-                if let Some(ind) = self.do_indexed(value, tokens) {
+            Token::Number(value) => {
+                if let Some(ind) = self.do_indexed(*value as u16, tokens) {
                     Ok(MemoryOperand::IND(ind))
                 } else {
-                    Ok(MemoryOperand::EXT(*value))
+                    Ok(MemoryOperand::EXT(*value as u16))
                 }
             }
             Token::OpenBracket => {
@@ -509,10 +509,10 @@ impl<'a> Recogniser<'a> {
     ) -> Result<Type1<T>, String> {
         match tokens.next() {
             Some(Token::Hash) => {
-                if let Some(Token::Unsigned(value)) = tokens.next() {
+                if let Some(Token::Number(value)) = tokens.next() {
                     // If T is only ever u8 or u16, this makes the mismatch go away.
                     // If the IntoBytes trait provided a conversion API we could use that instead of TryFrom<u16>.
-                    let imm = T::try_from(*value).map_err(|_| {
+                    let imm = T::try_from(*value as u16).map_err(|_| {
                         "Immediate value not valid for Type1 operand type".to_string()
                     })?;
                     Ok(Type1::IMM(imm))
@@ -536,7 +536,7 @@ impl<'a> Recogniser<'a> {
 
     fn do_typebr(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
         match tokens.next() {
-            Some(Token::Unsigned(value)) => {
+            Some(Token::Number(value)) => {
                 let offet = *value as i32 - self.pc as i32;
                 if offet >= -128 && offet <= 127 {
                     Ok(Typebr::SHORT(offet as i8))
@@ -566,7 +566,7 @@ impl<'a> Recogniser<'a> {
 
     fn do_typesbr(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
         match tokens.next() {
-            Some(Token::Unsigned(value)) => {
+            Some(Token::Number(value)) => {
                 if *value <= 127 {
                     Ok(Typebr::SHORT(*value as i8))
                 } else {
@@ -579,7 +579,7 @@ impl<'a> Recogniser<'a> {
 
     fn do_typelbr(&mut self, tokens: &mut std::slice::Iter<Token>) -> Result<Typebr, String> {
         match tokens.next() {
-            Some(Token::Unsigned(value)) => {
+            Some(Token::Number(value)) => {
                 if *value <= 32767 {
                     Ok(Typebr::LONG(*value as i16))
                 } else {

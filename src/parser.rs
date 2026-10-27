@@ -2,7 +2,7 @@
 pub enum Token {
     Empty,
     Name(String),
-    Unsigned(u16),
+    Number(i32),
     String(String),
     Colon,
     Comma,
@@ -84,8 +84,8 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
                     decimal_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                match u16::from_str_radix(&decimal_string, 10) {
-                    Ok(value) => tokens.push(Token::Unsigned(value)),
+                match i32::from_str_radix(&decimal_string, 10) {
+                    Ok(value) => tokens.push(Token::Number(value)),
                     Err(e) => return Err(TokenizerError::InvalidDec(e.to_string())),
                 };
             }
@@ -99,8 +99,8 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
                     hex_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                match u16::from_str_radix(&hex_string, 16) {
-                    Ok(value) => tokens.push(Token::Unsigned(value)),
+                match i32::from_str_radix(&hex_string, 16) {
+                    Ok(value) => tokens.push(Token::Number(value)),
                     Err(e) => return Err(TokenizerError::InvalidHex(e.to_string())),
                 };
             }
@@ -114,8 +114,8 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
                     bin_string.push(*next_c);
                     chars.next(); // consume the character
                 }
-                match u16::from_str_radix(&bin_string, 2) {
-                    Ok(value) => tokens.push(Token::Unsigned(value)),
+                match i32::from_str_radix(&bin_string, 2) {
+                    Ok(value) => tokens.push(Token::Number(value)),
                     Err(e) => return Err(TokenizerError::InvalidBin(e.to_string())),
                 };
             }
@@ -139,7 +139,7 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, TokenizerError> {
                 // Character literal.
                 // ToDo: add handling of special chars, and rejection of tabs
                 if let Some(next_c) = chars.next() {
-                    tokens.push(Token::Unsigned(next_c as u16));
+                    tokens.push(Token::Number(next_c as i32));
                     // Consume the closing quote
                     if let Some(quote_c) = chars.next() {
                         if quote_c != '\'' {

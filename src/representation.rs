@@ -359,7 +359,7 @@ pub enum Directive {
     BLANK,
     ORG(u16),
     EXEC(u16),
-    EQU(u16),
+    EQU(i32),
     DB(Vec<u8>),
     DW(Vec<u16>),
     DS(u16),
